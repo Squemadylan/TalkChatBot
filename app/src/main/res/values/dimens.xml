@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 支持的最小屏幕尺寸 -->
+    <dimen name="screen_width_min">320dp</dimen>
+    <dimen name="screen_height_min">480dp</dimen>
+</resources>
