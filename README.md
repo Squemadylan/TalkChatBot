@@ -2,7 +2,7 @@
 
 面向 Android 的大模型角色聊天应用：自建角色、流式对话、本地回忆与备份。支持 OpenAI 兼容的 Chat Completions API（含 SSE 流式）。
 
-- **当前版本**：1.0.1（versionCode 2）
+- **当前版本**：1.1.0（versionCode 3）
 - **最低系统**：Android 7.0（API 24）
 - **目标 SDK**：34
 - **仓库**：[github.com/Squemadylan/TalkChatBot](https://github.com/Squemadylan/TalkChatBot)

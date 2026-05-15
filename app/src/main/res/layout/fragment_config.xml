@@ -27,6 +27,44 @@
             android:padding="@dimen/kd_space_500"
             android:layout_marginBottom="@dimen/kd_space_400">
 
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/config_api_key_guide_title"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/kd_font_large"
+                android:textStyle="bold"
+                android:layout_marginBottom="@dimen/kd_space_200"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/config_api_key_guide_hint"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/kd_font_base"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="@dimen/kd_space_400"/>
+
+            <Button
+                android:id="@+id/btnRegisterSiliconflow"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/kd_input_height"
+                android:text="@string/config_register_siliconflow"
+                android:textColor="@color/pink_primary"
+                android:textSize="@dimen/kd_font_large"
+                android:textStyle="bold"
+                android:background="@drawable/bg_button_outline_radius"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card_radius"
+            android:padding="@dimen/kd_space_500"
+            android:layout_marginBottom="@dimen/kd_space_400">
+
             <EditText
                 android:id="@+id/etBaseUrl"
                 android:layout_width="match_parent"
@@ -41,19 +79,37 @@
                 android:layout_marginBottom="@dimen/kd_space_300"
                 android:inputType="textUri"/>
 
-            <EditText
-                android:id="@+id/etApiKey"
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/kd_input_height"
-                android:hint="API密钥"
-                android:textColor="@color/text_primary"
-                android:textColorHint="@color/text_secondary"
-                android:background="@drawable/bg_input_radius"
-                android:maxLength="500"
-                android:paddingHorizontal="@dimen/kd_space_400"
-                android:textSize="@dimen/kd_font_middle"
-                android:layout_marginBottom="@dimen/kd_space_300"
-                android:inputType="textPassword"/>
+                android:layout_marginBottom="@dimen/kd_space_300">
+
+                <EditText
+                    android:id="@+id/etApiKey"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:hint="API密钥"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_secondary"
+                    android:background="@drawable/bg_input_radius"
+                    android:maxLength="500"
+                    android:paddingStart="@dimen/kd_space_400"
+                    android:paddingEnd="48dp"
+                    android:textSize="@dimen/kd_font_middle"
+                    android:inputType="text"
+                    android:importantForAutofill="no" />
+
+                <ImageButton
+                    android:id="@+id/btnToggleApiKeyVisibility"
+                    android:layout_width="@dimen/kd_touch_min"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="end|center_vertical"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/config_toggle_api_key_visibility"
+                    android:padding="@dimen/kd_space_300"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_visibility_off" />
+            </FrameLayout>
 
             <EditText
                 android:id="@+id/etModel"
@@ -97,17 +153,6 @@
                 android:inputType="number"/>
 
         </LinearLayout>
-
-        <Button
-            android:id="@+id/btnSave"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/kd_input_height"
-            android:text="保存配置"
-            android:textColor="@color/text_on_primary"
-            android:textSize="@dimen/kd_font_large"
-            android:textStyle="bold"
-            android:background="@drawable/bg_button_radius"
-            android:layout_marginTop="@dimen/kd_space_200"/>
 
     </LinearLayout>
 
