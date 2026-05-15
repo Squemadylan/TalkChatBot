@@ -1,14 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="dark_background">#1a1a2e</color>
-    <color name="dark_card">#252542</color>
-    <color name="dark_bottom_nav">#16162a</color>
-    <color name="pink_primary">#ff6b9d</color>
-    <color name="pink_accent">#ff8fab</color>
-    <color name="text_primary">#ffffff</color>
-    <color name="text_secondary">#a0a0b0</color>
-    <color name="bottom_nav_color">#a0a0b0</color>
-    <color name="bottom_nav_selected">#ff6b9d</color>
-    <color name="user_message">#ff6b9d</color>
-    <color name="assistant_message">#2d2d4a</color>
+    <!-- base.json KD-Theme「浅色」场景色 + 基础色（与文档数值一致） -->
+    <color name="kd_color_white">#FFFFFF</color>
+    <color name="kd_text_primary">#0D0D0D</color>
+    <color name="kd_text_secondary">#6B6B6B</color>
+    <!-- 场景/文本 tertiary #0D0D0D75 → ARGB -->
+    <color name="kd_text_tertiary">#BF0D0D0D</color>
+    <color name="kd_icon_secondary">#757575</color>
+    <color name="kd_public_normal">#1F69E0</color>
+    <color name="kd_public_hover">#458BFA</color>
+    <color name="kd_public_light">#EDF4FF</color>
+    <color name="kd_text_public">#1E5FC7</color>
+    <color name="kd_background_base">#F0F0F0</color>
+    <color name="kd_background_white">#FFFFFF</color>
+    <color name="kd_background_group">#FAFAFA</color>
+    <color name="kd_background_plate">#F5F5F5</color>
+    <color name="kd_line_regular">#1F0D0D0D</color>
+    <color name="kd_input_fill">#FFFFFF</color>
+    <color name="kd_input_stroke">#1F0D0D0D</color>
+    <color name="kd_fill_medium">#E6E6E6</color>
+
+    <!-- 应用内语义别名（布局沿用旧名，数值对齐 KD） -->
+    <color name="dark_background">@color/kd_background_base</color>
+    <color name="dark_card">@color/kd_background_white</color>
+    <color name="dark_bottom_nav">@color/kd_background_white</color>
+    <color name="pink_primary">@color/kd_public_normal</color>
+    <color name="pink_accent">@color/kd_public_hover</color>
+    <color name="text_primary">@color/kd_text_primary</color>
+    <color name="text_secondary">@color/kd_text_secondary</color>
+    <color name="text_on_primary">@color/kd_color_white</color>
+    <color name="bottom_nav_unselected">@color/kd_icon_secondary</color>
+    <color name="bottom_nav_selected">@color/kd_public_normal</color>
+    <color name="user_message">@color/kd_public_normal</color>
+    <color name="assistant_message">@color/kd_fill_medium</color>
+    <color name="bubble_user_text">@color/kd_color_white</color>
+
+    <!-- 创建角色列表行图标色（参考稿语义色，数值独立于主题也可读） -->
+    <color name="kd_row_icon_tag">#D81B60</color>
+    <color name="kd_row_icon_document">#5E35B1</color>
+    <color name="kd_row_icon_chat">#1565C0</color>
+    <color name="kd_row_icon_alt">#2E7D32</color>
+    <color name="kd_row_icon_quote">#C62828</color>
+    <color name="kd_orange_emphasis">#FB8C00</color>
+
+    <!-- 自适应图标底色（与角色图浅蓝背景协调） -->
+    <color name="ic_launcher_background">#DDE8F8</color>
 </resources>

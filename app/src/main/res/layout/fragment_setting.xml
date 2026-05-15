@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/dark_background">
@@ -8,86 +9,79 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="@dimen/kd_space_400">
 
-        <!-- 个人设置 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/dark_card"
+            android:background="@drawable/bg_card_radius"
             android:orientation="vertical"
-            android:padding="16dp"
-            android:layout_marginBottom="16dp">
+            android:padding="@dimen/kd_space_500"
+            android:layout_marginBottom="@dimen/kd_space_400">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="个人设置"
                 android:textColor="@color/text_primary"
-                android:textSize="22sp"
+                android:textSize="@dimen/kd_font_xx_large"
                 android:textStyle="bold"
-                android:paddingBottom="8dp"/>
+                android:paddingBottom="@dimen/kd_space_200"/>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="资料、设定和邀请信息都在这里"
+                android:text="资料和设定在这里"
                 android:textColor="@color/text_secondary"
-                android:textSize="14sp"
-                android:paddingBottom="20dp"/>
+                android:textSize="@dimen/kd_font_base"
+                android:paddingBottom="@dimen/kd_space_500"/>
 
-            <!-- 头像 -->
             <FrameLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
-                android:paddingBottom="20dp">
+                android:paddingBottom="@dimen/kd_space_500">
 
-                <ImageView
+                <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/ivAvatar"
-                    android:layout_width="100dp"
-                    android:layout_height="100dp"
+                    android:layout_width="@dimen/kd_avatar_display"
+                    android:layout_height="@dimen/kd_avatar_display"
                     android:scaleType="centerCrop"
-                    android:background="@color/dark_background"
                     android:src="@drawable/ic_person"
-                    android:padding="24dp"/>
+                    app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.CornerSize50Percent"
+                    app:strokeColor="@color/kd_line_regular"
+                    app:strokeWidth="1dp" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                <ImageButton
+                    android:id="@+id/btnAvatarEdit"
+                    android:layout_width="@dimen/kd_avatar_edit_btn"
+                    android:layout_height="@dimen/kd_avatar_edit_btn"
                     android:layout_gravity="bottom|end"
-                    android:orientation="horizontal">
-
-                    <View
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:background="@drawable/bg_circle_dark"
-                        android:layout_marginEnd="8dp"/>
-
-                    <View
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:background="@drawable/bg_circle_pink"/>
-                </LinearLayout>
-
+                    android:layout_margin="@dimen/kd_space_200"
+                    android:background="@drawable/bg_avatar_edit"
+                    android:contentDescription="更换头像"
+                    android:padding="@dimen/kd_space_200"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_image"
+                    app:tint="@color/kd_public_normal" />
             </FrameLayout>
 
-            <!-- 用户名 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="12dp"
-                android:background="@color/dark_background"
-                android:layout_marginBottom="12dp">
+                android:minHeight="@dimen/kd_touch_min"
+                android:padding="@dimen/kd_space_400"
+                android:background="@drawable/bg_input_radius"
+                android:layout_marginBottom="@dimen/kd_space_300">
 
                 <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="@dimen/kd_icon_large"
+                    android:layout_height="@dimen/kd_icon_large"
                     android:src="@drawable/ic_person"
                     android:tint="@color/pink_primary"
                     android:layout_gravity="center_vertical"
-                    android:layout_marginEnd="12dp"/>
+                    android:layout_marginEnd="@dimen/kd_space_300"/>
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -100,7 +94,7 @@
                         android:layout_height="wrap_content"
                         android:text="用户名"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp"/>
+                        android:textSize="@dimen/kd_font_small"/>
 
                     <TextView
                         android:id="@+id/tvUsername"
@@ -108,35 +102,34 @@
                         android:layout_height="wrap_content"
                         android:text="用户"
                         android:textColor="@color/text_primary"
-                        android:textSize="16sp"/>
+                        android:textSize="@dimen/kd_font_middle"/>
 
                 </LinearLayout>
 
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="@dimen/kd_icon_middle"
+                    android:layout_height="@dimen/kd_icon_middle"
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@color/text_secondary"
                     android:layout_gravity="center_vertical"/>
 
             </LinearLayout>
 
-            <!-- 用户人设 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="12dp"
-                android:background="@color/dark_background"
-                android:layout_marginBottom="12dp">
+                android:minHeight="@dimen/kd_touch_min"
+                android:padding="@dimen/kd_space_400"
+                android:background="@drawable/bg_input_radius">
 
                 <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="@dimen/kd_icon_large"
+                    android:layout_height="@dimen/kd_icon_large"
                     android:src="@drawable/ic_document"
                     android:tint="@color/pink_primary"
                     android:layout_gravity="center_vertical"
-                    android:layout_marginEnd="12dp"/>
+                    android:layout_marginEnd="@dimen/kd_space_300"/>
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -149,7 +142,7 @@
                         android:layout_height="wrap_content"
                         android:text="用户人设"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp"/>
+                        android:textSize="@dimen/kd_font_small"/>
 
                     <TextView
                         android:id="@+id/tvUserPersona"
@@ -157,60 +150,13 @@
                         android:layout_height="wrap_content"
                         android:text="补充你的身份和设定"
                         android:textColor="@color/text_primary"
-                        android:textSize="14sp"/>
+                        android:textSize="@dimen/kd_font_base"/>
 
                 </LinearLayout>
 
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_arrow_right"
-                    android:tint="@color/text_secondary"
-                    android:layout_gravity="center_vertical"/>
-
-            </LinearLayout>
-
-            <!-- 邀请系统 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="12dp"
-                android:background="@color/dark_background">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_gift"
-                    android:tint="@color/pink_primary"
-                    android:layout_gravity="center_vertical"
-                    android:layout_marginEnd="12dp"/>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="邀请系统"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp"/>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="查看邀请码、绑定和奖励进度"
-                        android:textColor="@color/text_primary"
-                        android:textSize="14sp"/>
-
-                </LinearLayout>
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="@dimen/kd_icon_middle"
+                    android:layout_height="@dimen/kd_icon_middle"
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@color/text_secondary"
                     android:layout_gravity="center_vertical"/>
@@ -219,48 +165,46 @@
 
         </LinearLayout>
 
-        <!-- 通用设置 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/dark_card"
+            android:background="@drawable/bg_card_radius"
             android:orientation="vertical"
-            android:padding="16dp"
-            android:layout_marginBottom="16dp">
+            android:padding="@dimen/kd_space_500"
+            android:layout_marginBottom="@dimen/kd_space_400">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="通用设置"
                 android:textColor="@color/text_primary"
-                android:textSize="22sp"
+                android:textSize="@dimen/kd_font_xx_large"
                 android:textStyle="bold"
-                android:paddingBottom="8dp"/>
+                android:paddingBottom="@dimen/kd_space_200"/>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="主题、字体和音乐随手调"
+                android:text="主题设置"
                 android:textColor="@color/text_secondary"
-                android:textSize="14sp"
-                android:paddingBottom="20dp"/>
+                android:textSize="@dimen/kd_font_base"
+                android:paddingBottom="@dimen/kd_space_500"/>
 
-            <!-- 黑夜模式 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="12dp"
-                android:background="@color/dark_background"
-                android:layout_marginBottom="12dp">
+                android:minHeight="@dimen/kd_touch_min"
+                android:padding="@dimen/kd_space_400"
+                android:background="@drawable/bg_input_radius">
 
                 <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="@dimen/kd_icon_large"
+                    android:layout_height="@dimen/kd_icon_large"
                     android:src="@drawable/ic_sun"
                     android:tint="@color/pink_primary"
                     android:layout_gravity="center_vertical"
-                    android:layout_marginEnd="12dp"/>
+                    android:layout_marginEnd="@dimen/kd_space_300"/>
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -271,16 +215,16 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="黑夜模式"
+                        android:text="深色模式"
                         android:textColor="@color/text_primary"
-                        android:textSize="16sp"/>
+                        android:textSize="@dimen/kd_font_middle"/>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="开启后界面将切换为深色主题"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp"/>
+                        android:textSize="@dimen/kd_font_small"/>
 
                 </LinearLayout>
 
@@ -288,151 +232,55 @@
                     android:id="@+id/switchDarkMode"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:layout_gravity="center_vertical"/>
-
-            </LinearLayout>
-
-            <!-- 可爱字体 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="12dp"
-                android:background="@color/dark_background"
-                android:layout_marginBottom="12dp">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_text"
-                    android:tint="@color/pink_primary"
-                    android:layout_gravity="center_vertical"
-                    android:layout_marginEnd="12dp"/>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="可爱字体"
-                        android:textColor="@color/text_primary"
-                        android:textSize="16sp"/>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="全局使用圆润可爱的字体风格"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp"/>
-
-                </LinearLayout>
-
-                <Switch
-                    android:id="@+id/switchCuteFont"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
                     android:checked="false"
-                    android:layout_gravity="center_vertical"/>
-
-            </LinearLayout>
-
-            <!-- 背景音乐 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="12dp"
-                android:background="@color/dark_background">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_music"
-                    android:tint="@color/pink_primary"
-                    android:layout_gravity="center_vertical"
-                    android:layout_marginEnd="12dp"/>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="背景音乐"
-                        android:textColor="@color/text_primary"
-                        android:textSize="16sp"/>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="已开启·开关、音量和曲目"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp"/>
-
-                </LinearLayout>
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_arrow_right"
-                    android:tint="@color/text_secondary"
                     android:layout_gravity="center_vertical"/>
 
             </LinearLayout>
 
         </LinearLayout>
 
-        <!-- 聊天界面设置 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/dark_card"
+            android:background="@drawable/bg_card_radius"
             android:orientation="vertical"
-            android:padding="16dp"
-            android:layout_marginBottom="16dp">
+            android:padding="@dimen/kd_space_500"
+            android:layout_marginBottom="@dimen/kd_space_400">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="聊天界面设置"
                 android:textColor="@color/text_primary"
-                android:textSize="22sp"
+                android:textSize="@dimen/kd_font_xx_large"
                 android:textStyle="bold"
-                android:paddingBottom="8dp"/>
+                android:paddingBottom="@dimen/kd_space_200"/>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="聊天显示、回复风格和辅助功能都能调"
+                android:text="聊天显示和辅助功能"
                 android:textColor="@color/text_secondary"
-                android:textSize="14sp"
-                android:paddingBottom="20dp"/>
+                android:textSize="@dimen/kd_font_base"
+                android:paddingBottom="@dimen/kd_space_500"/>
 
-            <!-- 背景设置 -->
             <LinearLayout
                 android:id="@+id/llBackgroundSetting"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="12dp"
-                android:background="@color/dark_background"
-                android:layout_marginBottom="12dp">
+                android:minHeight="@dimen/kd_touch_min"
+                android:padding="@dimen/kd_space_400"
+                android:background="@drawable/bg_input_radius"
+                android:layout_marginBottom="@dimen/kd_space_300">
 
                 <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="@dimen/kd_icon_large"
+                    android:layout_height="@dimen/kd_icon_large"
                     android:src="@drawable/ic_image"
                     android:tint="@color/pink_primary"
                     android:layout_gravity="center_vertical"
-                    android:layout_marginEnd="12dp"/>
+                    android:layout_marginEnd="@dimen/kd_space_300"/>
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -445,43 +293,44 @@
                         android:layout_height="wrap_content"
                         android:text="背景设置"
                         android:textColor="@color/text_primary"
-                        android:textSize="16sp"/>
+                        android:textSize="@dimen/kd_font_middle"/>
 
                     <TextView
+                        android:id="@+id/tvBackgroundSummary"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="自定义图片"
+                        android:text="未设置（使用默认背景）"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp"/>
+                        android:textSize="@dimen/kd_font_small"/>
 
                 </LinearLayout>
 
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="@dimen/kd_icon_middle"
+                    android:layout_height="@dimen/kd_icon_middle"
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@color/text_secondary"
                     android:layout_gravity="center_vertical"/>
 
             </LinearLayout>
 
-            <!-- 气泡设置 -->
             <LinearLayout
                 android:id="@+id/llBubbleSetting"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="12dp"
-                android:background="@color/dark_background"
-                android:layout_marginBottom="12dp">
+                android:minHeight="@dimen/kd_touch_min"
+                android:padding="@dimen/kd_space_400"
+                android:background="@drawable/bg_input_radius"
+                android:layout_marginBottom="@dimen/kd_space_300">
 
                 <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="@dimen/kd_icon_large"
+                    android:layout_height="@dimen/kd_icon_large"
                     android:src="@drawable/ic_chat"
                     android:tint="@color/pink_primary"
                     android:layout_gravity="center_vertical"
-                    android:layout_marginEnd="12dp"/>
+                    android:layout_marginEnd="@dimen/kd_space_300"/>
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -494,43 +343,44 @@
                         android:layout_height="wrap_content"
                         android:text="气泡设置"
                         android:textColor="@color/text_primary"
-                        android:textSize="16sp"/>
+                        android:textSize="@dimen/kd_font_middle"/>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="透明度、字号和高亮颜色"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp"/>
+                        android:textSize="@dimen/kd_font_small"/>
 
                 </LinearLayout>
 
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="@dimen/kd_icon_middle"
+                    android:layout_height="@dimen/kd_icon_middle"
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@color/text_secondary"
                     android:layout_gravity="center_vertical"/>
 
             </LinearLayout>
 
-            <!-- 语音设置 -->
             <LinearLayout
                 android:id="@+id/llVoiceSetting"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="12dp"
-                android:background="@color/dark_background"
-                android:layout_marginBottom="12dp">
+                android:visibility="gone"
+                android:minHeight="@dimen/kd_touch_min"
+                android:padding="@dimen/kd_space_400"
+                android:background="@drawable/bg_input_radius"
+                android:layout_marginBottom="@dimen/kd_space_300">
 
                 <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="@dimen/kd_icon_large"
+                    android:layout_height="@dimen/kd_icon_large"
                     android:src="@drawable/ic_volume"
                     android:tint="@color/pink_primary"
                     android:layout_gravity="center_vertical"
-                    android:layout_marginEnd="12dp"/>
+                    android:layout_marginEnd="@dimen/kd_space_300"/>
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -543,43 +393,107 @@
                         android:layout_height="wrap_content"
                         android:text="语音设置"
                         android:textColor="@color/text_primary"
-                        android:textSize="16sp"/>
+                        android:textSize="@dimen/kd_font_middle"/>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="自动播放已关闭·XiaoYi"
+                        android:text="自动播放已关闭"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp"/>
+                        android:textSize="@dimen/kd_font_small"/>
 
                 </LinearLayout>
 
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="@dimen/kd_icon_middle"
+                    android:layout_height="@dimen/kd_icon_middle"
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@color/text_secondary"
                     android:layout_gravity="center_vertical"/>
 
             </LinearLayout>
 
-            <!-- 记忆设置 -->
             <LinearLayout
                 android:id="@+id/llMemorySetting"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/kd_space_400"
+                android:background="@drawable/bg_input_radius"
+                android:layout_marginBottom="@dimen/kd_space_300">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="@dimen/kd_icon_large"
+                        android:layout_height="@dimen/kd_icon_large"
+                        android:src="@drawable/ic_memory"
+                        android:tint="@color/pink_primary"
+                        android:layout_marginEnd="@dimen/kd_space_300"/>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="记忆设置"
+                            android:textColor="@color/text_primary"
+                            android:textSize="@dimen/kd_font_middle"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="请求大模型时附带的历史消息条数（0–10）"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="@dimen/kd_font_small"/>
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvMemoryStrengthValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="5"
+                        android:textColor="@color/pink_primary"
+                        android:textSize="@dimen/kd_font_extra_large"
+                        android:textStyle="bold"
+                        android:minWidth="@dimen/kd_space_800"
+                        android:gravity="end"/>
+                </LinearLayout>
+
+                <SeekBar
+                    android:id="@+id/seekMemoryContext"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/kd_space_300"
+                    android:max="10"
+                    android:progress="5" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llChatAvatarSetting"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="12dp"
-                android:background="@color/dark_background"
-                android:layout_marginBottom="12dp">
+                android:minHeight="@dimen/kd_touch_min"
+                android:padding="@dimen/kd_space_400"
+                android:background="@drawable/bg_input_radius"
+                android:layout_marginBottom="@dimen/kd_space_300">
 
                 <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_memory"
+                    android:layout_width="@dimen/kd_icon_large"
+                    android:layout_height="@dimen/kd_icon_large"
+                    android:src="@drawable/ic_group"
                     android:tint="@color/pink_primary"
                     android:layout_gravity="center_vertical"
-                    android:layout_marginEnd="12dp"/>
+                    android:layout_marginEnd="@dimen/kd_space_300"/>
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -590,45 +504,43 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="记忆设置"
+                        android:text="对话显示头像"
                         android:textColor="@color/text_primary"
-                        android:textSize="16sp"/>
+                        android:textSize="@dimen/kd_font_middle"/>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="已开启(强度10)"
+                        android:text="关闭后双方头像均隐藏"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp"/>
-
+                        android:textSize="@dimen/kd_font_small"/>
                 </LinearLayout>
 
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_arrow_right"
-                    android:tint="@color/text_secondary"
-                    android:layout_gravity="center_vertical"/>
-
+                <Switch
+                    android:id="@+id/switchChatShowAvatars"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:checked="true"/>
             </LinearLayout>
 
-            <!-- 回复设置 -->
             <LinearLayout
                 android:id="@+id/llReplySetting"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="12dp"
-                android:background="@color/dark_background"
-                android:layout_marginBottom="12dp">
+                android:minHeight="@dimen/kd_touch_min"
+                android:padding="@dimen/kd_space_400"
+                android:background="@drawable/bg_input_radius"
+                android:layout_marginBottom="@dimen/kd_space_300">
 
                 <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="@dimen/kd_icon_large"
+                    android:layout_height="@dimen/kd_icon_large"
                     android:src="@drawable/ic_document"
                     android:tint="@color/pink_primary"
                     android:layout_gravity="center_vertical"
-                    android:layout_marginEnd="12dp"/>
+                    android:layout_marginEnd="@dimen/kd_space_300"/>
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -641,92 +553,44 @@
                         android:layout_height="wrap_content"
                         android:text="回复设置"
                         android:textColor="@color/text_primary"
-                        android:textSize="16sp"/>
+                        android:textSize="@dimen/kd_font_middle"/>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="已关闭"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp"/>
+                        android:textSize="@dimen/kd_font_small"/>
 
                 </LinearLayout>
 
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="@dimen/kd_icon_middle"
+                    android:layout_height="@dimen/kd_icon_middle"
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@color/text_secondary"
                     android:layout_gravity="center_vertical"/>
 
             </LinearLayout>
 
-            <!-- 全局正则 -->
-            <LinearLayout
-                android:id="@+id/llGlobalRegex"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="12dp"
-                android:background="@color/dark_background"
-                android:layout_marginBottom="12dp">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_text"
-                    android:tint="@color/pink_primary"
-                    android:layout_gravity="center_vertical"
-                    android:layout_marginEnd="12dp"/>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="全局正则"
-                        android:textColor="@color/text_primary"
-                        android:textSize="16sp"/>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="全局正则已关闭"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp"/>
-
-                </LinearLayout>
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_arrow_right"
-                    android:tint="@color/text_secondary"
-                    android:layout_gravity="center_vertical"/>
-
-            </LinearLayout>
-
-            <!-- 配图设置 -->
             <LinearLayout
                 android:id="@+id/llImageSetting"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="12dp"
-                android:background="@color/dark_background"
-                android:layout_marginBottom="12dp">
+                android:visibility="gone"
+                android:minHeight="@dimen/kd_touch_min"
+                android:padding="@dimen/kd_space_400"
+                android:background="@drawable/bg_input_radius"
+                android:layout_marginBottom="@dimen/kd_space_300">
 
                 <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="@dimen/kd_icon_large"
+                    android:layout_height="@dimen/kd_icon_large"
                     android:src="@drawable/ic_image"
                     android:tint="@color/pink_primary"
                     android:layout_gravity="center_vertical"
-                    android:layout_marginEnd="12dp"/>
+                    android:layout_marginEnd="@dimen/kd_space_300"/>
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -739,42 +603,43 @@
                         android:layout_height="wrap_content"
                         android:text="配图设置"
                         android:textColor="@color/text_primary"
-                        android:textSize="16sp"/>
+                        android:textSize="@dimen/kd_font_middle"/>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="配图已禁用·1280x720"
+                        android:text="配图已禁用"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp"/>
+                        android:textSize="@dimen/kd_font_small"/>
 
                 </LinearLayout>
 
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="@dimen/kd_icon_middle"
+                    android:layout_height="@dimen/kd_icon_middle"
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@color/text_secondary"
                     android:layout_gravity="center_vertical"/>
 
             </LinearLayout>
 
-            <!-- 状态栏设置 -->
             <LinearLayout
                 android:id="@+id/llStatusBarSetting"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="12dp"
-                android:background="@color/dark_background">
+                android:visibility="gone"
+                android:minHeight="@dimen/kd_touch_min"
+                android:padding="@dimen/kd_space_400"
+                android:background="@drawable/bg_input_radius">
 
                 <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="@dimen/kd_icon_large"
+                    android:layout_height="@dimen/kd_icon_large"
                     android:src="@drawable/ic_settings"
                     android:tint="@color/pink_primary"
                     android:layout_gravity="center_vertical"
-                    android:layout_marginEnd="12dp"/>
+                    android:layout_marginEnd="@dimen/kd_space_300"/>
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -787,20 +652,20 @@
                         android:layout_height="wrap_content"
                         android:text="状态栏设置"
                         android:textColor="@color/text_primary"
-                        android:textSize="16sp"/>
+                        android:textSize="@dimen/kd_font_middle"/>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="已开启·自定义显示内容"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp"/>
+                        android:textSize="@dimen/kd_font_small"/>
 
                 </LinearLayout>
 
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="@dimen/kd_icon_middle"
+                    android:layout_height="@dimen/kd_icon_middle"
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@color/text_secondary"
                     android:layout_gravity="center_vertical"/>
@@ -809,48 +674,47 @@
 
         </LinearLayout>
 
-        <!-- 关于与帮助 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/dark_card"
+            android:background="@drawable/bg_card_radius"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="@dimen/kd_space_500">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="关于与帮助"
                 android:textColor="@color/text_primary"
-                android:textSize="22sp"
+                android:textSize="@dimen/kd_font_xx_large"
                 android:textStyle="bold"
-                android:paddingBottom="8dp"/>
+                android:paddingBottom="@dimen/kd_space_200"/>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="版本、官网和反馈入口都在这里"
+                android:text="版本和反馈入口"
                 android:textColor="@color/text_secondary"
-                android:textSize="14sp"
-                android:paddingBottom="20dp"/>
+                android:textSize="@dimen/kd_font_base"
+                android:paddingBottom="@dimen/kd_space_500"/>
 
-            <!-- 备份与恢复 -->
             <LinearLayout
                 android:id="@+id/llBackup"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="12dp"
-                android:background="@color/dark_background"
-                android:layout_marginBottom="12dp">
+                android:minHeight="@dimen/kd_touch_min"
+                android:padding="@dimen/kd_space_400"
+                android:background="@drawable/bg_input_radius"
+                android:layout_marginBottom="@dimen/kd_space_300">
 
                 <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="@dimen/kd_icon_large"
+                    android:layout_height="@dimen/kd_icon_large"
                     android:src="@drawable/ic_document"
                     android:tint="@color/pink_primary"
                     android:layout_gravity="center_vertical"
-                    android:layout_marginEnd="12dp"/>
+                    android:layout_marginEnd="@dimen/kd_space_300"/>
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -863,43 +727,42 @@
                         android:layout_height="wrap_content"
                         android:text="备份与恢复"
                         android:textColor="@color/text_primary"
-                        android:textSize="16sp"/>
+                        android:textSize="@dimen/kd_font_middle"/>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="导出当前设置，或从备份恢复"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp"/>
+                        android:textSize="@dimen/kd_font_small"/>
 
                 </LinearLayout>
 
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="@dimen/kd_icon_middle"
+                    android:layout_height="@dimen/kd_icon_middle"
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@color/text_secondary"
                     android:layout_gravity="center_vertical"/>
 
             </LinearLayout>
 
-            <!-- 检查更新 -->
             <LinearLayout
                 android:id="@+id/llCheckUpdate"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="12dp"
-                android:background="@color/dark_background"
-                android:layout_marginBottom="12dp">
+                android:minHeight="@dimen/kd_touch_min"
+                android:padding="@dimen/kd_space_400"
+                android:background="@drawable/bg_input_radius">
 
                 <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="@dimen/kd_icon_large"
+                    android:layout_height="@dimen/kd_icon_large"
                     android:src="@drawable/ic_sync"
                     android:tint="@color/pink_primary"
                     android:layout_gravity="center_vertical"
-                    android:layout_marginEnd="12dp"/>
+                    android:layout_marginEnd="@dimen/kd_space_300"/>
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -912,117 +775,21 @@
                         android:layout_height="wrap_content"
                         android:text="检查更新"
                         android:textColor="@color/text_primary"
-                        android:textSize="16sp"/>
+                        android:textSize="@dimen/kd_font_middle"/>
 
                     <TextView
+                        android:id="@+id/tvVersion"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="当前版本: v2.3.0"
+                        android:text="当前版本: v1.0.0"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp"/>
+                        android:textSize="@dimen/kd_font_small"/>
 
                 </LinearLayout>
 
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_arrow_right"
-                    android:tint="@color/text_secondary"
-                    android:layout_gravity="center_vertical"/>
-
-            </LinearLayout>
-
-            <!-- 官方网站 -->
-            <LinearLayout
-                android:id="@+id/llOfficialWebsite"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="12dp"
-                android:background="@color/dark_background"
-                android:layout_marginBottom="12dp">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_web"
-                    android:tint="@color/pink_primary"
-                    android:layout_gravity="center_vertical"
-                    android:layout_marginEnd="12dp"/>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="官方网站"
-                        android:textColor="@color/text_primary"
-                        android:textSize="16sp"/>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="查看公告、下载和最新消息"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp"/>
-
-                </LinearLayout>
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_arrow_right"
-                    android:tint="@color/text_secondary"
-                    android:layout_gravity="center_vertical"/>
-
-            </LinearLayout>
-
-            <!-- 官方交流群 -->
-            <LinearLayout
-                android:id="@+id/llOfficialGroup"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="12dp"
-                android:background="@color/dark_background">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_group"
-                    android:tint="@color/pink_primary"
-                    android:layout_gravity="center_vertical"
-                    android:layout_marginEnd="12dp"/>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="官方交流群"
-                        android:textColor="@color/text_primary"
-                        android:textSize="16sp"/>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="反馈、公告和交流都在群里"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp"/>
-
-                </LinearLayout>
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="@dimen/kd_icon_middle"
+                    android:layout_height="@dimen/kd_icon_middle"
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@color/text_secondary"
                     android:layout_gravity="center_vertical"/>

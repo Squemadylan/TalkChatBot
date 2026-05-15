@@ -1,20 +1,29 @@
 package com.example.chatbot.ui.character
 
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.core.content.ContextCompat
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.chatbot.App
 import com.example.chatbot.R
+import com.example.chatbot.data.model.Character
 import com.example.chatbot.data.repository.CharacterRepository
 import com.example.chatbot.databinding.FragmentCharacterBinding
+import com.example.chatbot.ui.common.MultiChoiceDialog
+import com.example.chatbot.util.AvatarStorage
 import com.example.chatbot.viewmodel.CharacterViewModel
+import com.example.chatbot.viewmodel.CharacterViewModelFactory
+import kotlinx.coroutines.launch
+import java.util.Locale
 
 class CharacterFragment : Fragment() {
 
@@ -24,10 +33,32 @@ class CharacterFragment : Fragment() {
     private lateinit var viewModel: CharacterViewModel
     private lateinit var adapter: CharacterAdapter
 
-    private var isMyCharactersTab = true
-    private var currentPage = 1
-    private var totalPages = 1
-    private var pageSize = 8
+    private var pendingAvatarCharacterId: Long? = null
+
+    private var allCharactersCache: List<Character> = emptyList()
+    private var currentTagFilter: Set<String> = emptySet()
+
+    private val pickCharacterAvatar = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        val id = pendingAvatarCharacterId ?: return@registerForActivityResult
+        pendingAvatarCharacterId = null
+        if (uri == null || !::viewModel.isInitialized) return@registerForActivityResult
+        viewLifecycleOwner.lifecycleScope.launch {
+            val character = viewModel.getCharacterById(id) ?: return@launch
+            val path = AvatarStorage.saveFromUri(
+                requireContext().applicationContext,
+                uri,
+                "character_${id}.jpg"
+            )
+            if (path != null) {
+                viewModel.updateCharacter(character.copy(avatar = path))
+                showToast("角色头像已更新")
+            } else {
+                showToast("保存头像失败")
+            }
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -49,8 +80,6 @@ class CharacterFragment : Fragment() {
         initializeViewModel()
         setupRecyclerView()
         setupAddButton()
-        setupTabButtons()
-        setupPagination()
         setupSearchAndFilter()
 
         return binding.root
@@ -70,9 +99,10 @@ class CharacterFragment : Fragment() {
             val app = requireActivity().application as App
             val characterRepository = CharacterRepository(app.database.characterDao())
 
-            viewModel = ViewModelProvider(this) {
-                CharacterViewModel(characterRepository)
-            }.get(CharacterViewModel::class.java)
+            viewModel = ViewModelProvider(
+                this,
+                CharacterViewModelFactory(characterRepository)
+            )[CharacterViewModel::class.java]
 
             observeCharacters()
         } catch (e: Exception) {
@@ -85,12 +115,10 @@ class CharacterFragment : Fragment() {
 
         viewModel.allCharacters.observe(viewLifecycleOwner) { characters ->
             safeAction {
-                adapter.submitList(characters)
-                totalPages = if (characters.isEmpty()) 1 else (characters.size + pageSize - 1) / pageSize
-                binding.tvPageInfo.text = "$currentPage/$totalPages"
-
-                if (characters.isEmpty()) {
-                    showToast("暂无角色，点击右下角添加")
+                allCharactersCache = characters ?: emptyList()
+                updateCharacterList()
+                if (allCharactersCache.isEmpty()) {
+                    showToast("暂无角色，点击右上方 + 添加")
                 }
             }
         }
@@ -98,14 +126,34 @@ class CharacterFragment : Fragment() {
 
     private fun setupRecyclerView() {
         try {
-            adapter = CharacterAdapter { character ->
-                safeNavigate {
-                    val action = CharacterFragmentDirections.actionCharacterFragmentToChatFragment(character.id)
-                    findNavController().navigate(action)
+            adapter = CharacterAdapter(
+                onCardClick = { character ->
+                    safeNavigate {
+                        findNavController().navigate(
+                            R.id.chatFragment,
+                            Bundle().apply { putLong("characterId", character.id) },
+                            androidx.navigation.NavOptions.Builder()
+                                .setLaunchSingleTop(true)
+                                .build()
+                        )
+                    }
+                },
+                onAvatarEdit = { character ->
+                    pendingAvatarCharacterId = character.id
+                    pickCharacterAvatar.launch("image/*")
+                },
+                onAvatarLongClick = { character ->
+                    try {
+                        AddCharacterDialog(existingCharacter = character) { updated ->
+                            viewModel.updateCharacter(updated)
+                        }.show(childFragmentManager, "EditCharacterDialog")
+                    } catch (e: Exception) {
+                        showError("打开编辑失败: ${e.message}")
+                    }
                 }
-            }
+            )
 
-            binding.recyclerView.layoutManager = GridLayoutManager(context, 2)
+            binding.recyclerView.layoutManager = GridLayoutManager(requireContext(), 2)
             binding.recyclerView.adapter = adapter
         } catch (e: Exception) {
             showError("Failed to setup RecyclerView: ${e.message}")
@@ -113,9 +161,9 @@ class CharacterFragment : Fragment() {
     }
 
     private fun setupAddButton() {
-        binding.fabAdd.setOnClickListener {
+        binding.btnAddCharacter.setOnClickListener {
             try {
-                val dialog = AddCharacterDialog { character ->
+                val dialog = AddCharacterDialog(existingCharacter = null) { character ->
                     viewModel.insertCharacter(character)
                 }
                 dialog.show(childFragmentManager, "AddCharacterDialog")
@@ -125,95 +173,82 @@ class CharacterFragment : Fragment() {
         }
     }
 
-    private fun setupTabButtons() {
-        binding.btnMarket.setOnClickListener {
-            isMyCharactersTab = false
-            updateTabUI()
-            showToast("角色市场功能")
-        }
-
-        binding.btnMyCharacters.setOnClickListener {
-            isMyCharactersTab = true
-            updateTabUI()
-        }
-    }
-
-    private fun updateTabUI() {
-        safeAction {
-            try {
-                if (isMyCharactersTab) {
-                    binding.btnMyCharacters.setBackgroundResource(R.drawable.bg_tab_selected)
-                    binding.btnMyCharacters.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary))
-                    binding.btnMarket.setBackgroundResource(R.drawable.bg_tab_unselected)
-                    binding.btnMarket.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary))
-                    binding.fabAdd.visibility = View.VISIBLE
-                } else {
-                    binding.btnMarket.setBackgroundResource(R.drawable.bg_tab_selected)
-                    binding.btnMarket.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary))
-                    binding.btnMyCharacters.setBackgroundResource(R.drawable.bg_tab_unselected)
-                    binding.btnMyCharacters.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary))
-                    binding.fabAdd.visibility = View.GONE
-                }
-            } catch (e: Exception) {
-                android.util.Log.e(TAG, "Failed to update tab UI", e)
-            }
-        }
-    }
-
-    private fun setupPagination() {
-        binding.btnFirstPage.setOnClickListener {
-            if (currentPage > 1) {
-                currentPage = 1
-                updatePageInfo()
-                showToast("第一页")
-            }
-        }
-
-        binding.btnPrevPage.setOnClickListener {
-            if (currentPage > 1) {
-                currentPage--
-                updatePageInfo()
-                showToast("上一页")
-            }
-        }
-
-        binding.btnNextPage.setOnClickListener {
-            if (currentPage < totalPages) {
-                currentPage++
-                updatePageInfo()
-                showToast("下一页")
-            }
-        }
-
-        binding.btnLastPage.setOnClickListener {
-            if (currentPage < totalPages) {
-                currentPage = totalPages
-                updatePageInfo()
-                showToast("最后一页")
-            }
-        }
-
-        binding.btnPageSize.setOnClickListener {
-            pageSize = if (pageSize == 8) 10 else 8
-            binding.btnPageSize.text = "$pageSize个/页"
-            showToast("每页显示$pageSize个")
-        }
-    }
-
-    private fun updatePageInfo() {
-        safeAction {
-            binding.tvPageInfo.text = "$currentPage/$totalPages"
-        }
-    }
-
     private fun setupSearchAndFilter() {
         binding.btnFilter.setOnClickListener {
-            showToast("筛选功能")
+            showFilterDialog()
         }
 
-        binding.etSearch.setOnClickListener {
-            showToast("搜索角色")
+        binding.etSearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                updateCharacterList()
+            }
+        })
+    }
+
+    private fun showFilterDialog() {
+        val allTags = allCharactersCache
+            .flatMap { it.tags.split(",", "，") }
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .distinct()
+            .sorted()
+
+        if (allTags.isEmpty()) {
+            showToast("暂无标签可筛选")
+            return
         }
+
+        val checkedItems = BooleanArray(allTags.size) { index ->
+            allTags[index] in currentTagFilter
+        }
+
+        MultiChoiceDialog(
+            title = "按标签筛选",
+            items = allTags,
+            checkedItems = checkedItems
+        ) { selectedIndices ->
+            val selectedTags = selectedIndices.map { allTags[it] }.toSet()
+            applyTagFilter(selectedTags)
+        }.show(childFragmentManager, "FilterDialog")
+    }
+
+    private fun applyTagFilter(tags: Set<String>) {
+        currentTagFilter = tags
+        if (tags.isEmpty()) {
+            showToast("已清除筛选")
+        } else {
+            showToast("已筛选：${tags.size} 个标签")
+        }
+        updateCharacterList()
+    }
+
+    private fun updateCharacterList() {
+        val query = binding.etSearch.text.toString().trim().lowercase(Locale.getDefault())
+
+        var filtered = if (currentTagFilter.isEmpty()) {
+            allCharactersCache
+        } else {
+            allCharactersCache.filter { character ->
+                val charTags = character.tags
+                    .split(",", "，")
+                    .map { it.trim() }
+                    .filter { it.isNotBlank() }
+                    .toSet()
+                currentTagFilter.any { it in charTags }
+            }
+        }
+
+        if (query.isNotEmpty()) {
+            filtered = filtered.filter { character ->
+                character.name.lowercase(Locale.getDefault()).contains(query) ||
+                        character.tags.lowercase(Locale.getDefault()).contains(query) ||
+                        character.description.lowercase(Locale.getDefault()).contains(query)
+            }
+        }
+
+        adapter.submitList(filtered)
     }
 
     private fun safeNavigate(action: () -> Unit) {

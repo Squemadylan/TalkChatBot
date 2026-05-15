@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- base.json KD-Theme「深色」场景色 + _KD-Base-Dark 灰阶 -->
+    <color name="kd_color_white">#FFFFFF</color>
+    <color name="kd_text_primary">#F5F5F5</color>
+    <color name="kd_text_secondary">#8A8A8A</color>
+    <color name="kd_text_tertiary">#BFF5F5F5</color>
+    <color name="kd_icon_secondary">#8A8A8A</color>
+    <color name="kd_public_normal">#2572E6</color>
+    <color name="kd_public_hover">#438CFA</color>
+    <color name="kd_public_light">#283549</color>
+    <color name="kd_text_public">#438CFA</color>
+    <color name="kd_background_base">#121212</color>
+    <color name="kd_background_white">#2E2E2E</color>
+    <color name="kd_background_group">#1F1F1F</color>
+    <color name="kd_background_plate">#191919</color>
+    <color name="kd_line_regular">#24F5F5F5</color>
+    <color name="kd_input_fill">#2E2E2E</color>
+    <color name="kd_input_stroke">#14F5F5F5</color>
+    <color name="kd_fill_medium">#383838</color>
+
+    <color name="dark_background">@color/kd_background_base</color>
+    <color name="dark_card">@color/kd_background_plate</color>
+    <color name="dark_bottom_nav">#242424</color>
+    <color name="pink_primary">@color/kd_public_normal</color>
+    <color name="pink_accent">@color/kd_public_hover</color>
+    <color name="text_primary">@color/kd_text_primary</color>
+    <color name="text_secondary">@color/kd_text_secondary</color>
+    <color name="text_on_primary">@color/kd_color_white</color>
+    <color name="bottom_nav_unselected">@color/kd_icon_secondary</color>
+    <color name="bottom_nav_selected">@color/kd_public_normal</color>
+    <color name="user_message">@color/kd_public_normal</color>
+    <color name="assistant_message">@color/kd_fill_medium</color>
+    <color name="bubble_user_text">@color/kd_color_white</color>
+
+    <color name="kd_row_icon_tag">#F48FB1</color>
+    <color name="kd_row_icon_document">#B39DDB</color>
+    <color name="kd_row_icon_chat">@color/kd_public_normal</color>
+    <color name="kd_row_icon_alt">#81C784</color>
+    <color name="kd_row_icon_quote">#E57373</color>
+    <color name="kd_orange_emphasis">#FFB74D</color>
+</resources>

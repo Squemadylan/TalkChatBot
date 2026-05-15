@@ -1,167 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@color/dark_background">
 
-    <!-- 顶部标签栏 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="16dp"
-        android:weightSum="2">
-
-        <Button
-            android:id="@+id/btnMarket"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:background="@drawable/bg_tab_unselected"
-            android:text="角色市场"
-            android:textColor="@color/text_secondary"
-            android:textSize="16sp"
-            android:layout_marginEnd="8dp"/>
-
-        <Button
-            android:id="@+id/btnMyCharacters"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:background="@drawable/bg_tab_selected"
-            android:text="我的角色"
-            android:textColor="@color/text_primary"
-            android:textSize="16sp"/>
-
-    </LinearLayout>
-
-    <!-- 筛选和搜索栏 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
+        android:padding="@dimen/kd_space_400"
         android:gravity="center_vertical">
 
-        <!-- 每页显示数量 -->
-        <Button
-            android:id="@+id/btnPageSize"
-            android:layout_width="wrap_content"
-            android:layout_height="40dp"
-            android:background="@color/dark_card"
-            android:text="8个/页"
-            android:textColor="@color/pink_primary"
-            android:textSize="14sp"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:layout_marginEnd="8dp"/>
-
-        <!-- 搜索框 -->
         <EditText
             android:id="@+id/etSearch"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="@dimen/kd_touch_min"
             android:layout_weight="1"
             android:hint="搜索角色..."
             android:textColor="@color/text_primary"
             android:textColorHint="@color/text_secondary"
-            android:background="@color/dark_card"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
+            android:background="@drawable/bg_input_radius"
+            android:maxLength="500"
+            android:paddingStart="@dimen/kd_space_400"
+            android:paddingEnd="@dimen/kd_space_400"
             android:singleLine="true"
-            android:textSize="14sp"
-            android:layout_marginEnd="8dp"/>
+            android:textSize="@dimen/kd_font_base"
+            android:layout_marginEnd="@dimen/kd_space_300"/>
 
-        <!-- 筛选按钮 -->
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnFilter"
+            style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="wrap_content"
-            android:layout_height="40dp"
-            android:background="@color/dark_card"
-            android:text="全部"
-            android:textColor="@color/pink_primary"
-            android:textSize="14sp"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"/>
-
-    </LinearLayout>
-
-    <!-- 分页控件 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:padding="16dp"
-        android:background="@color/dark_card"
-        android:layout_margin="16dp">
-
-        <Button
-            android:id="@+id/btnFirstPage"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@color/dark_background"
-            android:text="<<"
-            android:textColor="@color/text_secondary"/>
-
-        <Button
-            android:id="@+id/btnPrevPage"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@color/dark_background"
-            android:text="<"
-            android:textColor="@color/text_secondary"
-            android:layout_marginStart="8dp"/>
-
-        <TextView
-            android:id="@+id/tvPageInfo"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="1/1"
+            android:layout_height="@dimen/kd_touch_min"
+            android:layout_marginEnd="@dimen/kd_space_300"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:paddingStart="@dimen/kd_space_400"
+            android:paddingEnd="@dimen/kd_space_400"
+            android:text="筛选"
             android:textColor="@color/text_primary"
-            android:textSize="18sp"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"/>
+            android:textSize="@dimen/kd_font_base"
+            app:cornerRadius="@dimen/kd_radius_200"
+            app:strokeColor="@color/kd_input_stroke"
+            app:strokeWidth="1dp" />
 
-        <Button
-            android:id="@+id/btnNextPage"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@color/dark_background"
-            android:text=">"
-            android:textColor="@color/text_secondary"/>
-
-        <Button
-            android:id="@+id/btnLastPage"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@color/dark_background"
-            android:text=">>"
-            android:textColor="@color/text_secondary"
-            android:layout_marginStart="8dp"/>
-
+        <ImageButton
+            android:id="@+id/btnAddCharacter"
+            android:layout_width="@dimen/kd_input_height"
+            android:layout_height="@dimen/kd_input_height"
+            android:background="@drawable/bg_button_radius"
+            android:contentDescription="添加角色"
+            android:padding="@dimen/kd_space_250"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_add"
+            app:tint="@color/text_on_primary" />
     </LinearLayout>
 
-    <!-- 角色列表 -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:padding="16dp"
+        android:padding="@dimen/kd_space_400"
         android:clipToPadding="false"/>
-
-    <!-- 添加按钮 -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabAdd"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
-        android:src="@drawable/ic_add"
-        android:backgroundTint="@color/pink_primary"
-        android:elevation="8dp"/>
 
 </LinearLayout>

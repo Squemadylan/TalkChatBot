@@ -1,10 +1,25 @@
 <resources>
+    <!-- base.json：PingFang SC 在 Android 侧使用 sans-serif 体系以保证中文回退 -->
     <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/pink_primary</item>
-        <item name="colorPrimaryDark">@color/dark_background</item>
-        <item name="colorAccent">@color/pink_accent</item>
+        <item name="colorPrimary">@color/kd_public_normal</item>
+        <item name="colorPrimaryDark">@color/kd_background_base</item>
+        <item name="colorAccent">@color/kd_public_hover</item>
         <item name="android:windowBackground">@color/dark_background</item>
         <item name="android:textColorPrimary">@color/text_primary</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="fontFamily">sans-serif</item>
+    </style>
+
+    <style name="ShapeAppearanceOverlay.App.CornerSize50Percent" parent="">
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <!-- 居中 DialogFragment：需为浮动窗口，否则自定义布局/嵌套弹窗易崩溃 -->
+    <style name="Theme.Chatbot.Dialog" parent="Theme.MaterialComponents.DayNight.Dialog">
+        <item name="colorPrimary">@color/kd_public_normal</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowCloseOnTouchOutside">true</item>
     </style>
 </resources>

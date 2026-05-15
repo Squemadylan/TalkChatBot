@@ -1,93 +1,95 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:background="@color/dark_card"
-    android:layout_margin="8dp"
-    android:padding="8dp"
-    android:elevation="4dp">
+    android:background="@drawable/bg_card_radius"
+    android:layout_margin="@dimen/kd_space_200"
+    android:padding="@dimen/kd_space_200"
+    android:elevation="@dimen/kd_space_100">
 
-    <!-- 角色头像区域 -->
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="160dp">
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivAvatar"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_person"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.CornerSize50Percent"
+        app:strokeColor="@color/kd_line_regular"
+        app:strokeWidth="1dp" />
 
-        <ImageView
-            android:id="@+id/ivAvatar"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleType="centerCrop"
-            android:background="@color/dark_background"/>
+    <ImageButton
+        android:id="@+id/btnAvatarEdit"
+        android:layout_width="@dimen/kd_avatar_edit_btn"
+        android:layout_height="@dimen/kd_avatar_edit_btn"
+        android:layout_margin="@dimen/kd_space_200"
+        android:background="@drawable/bg_avatar_edit"
+        android:contentDescription="更换角色头像"
+        android:padding="@dimen/kd_space_200"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_image"
+        app:layout_constraintBottom_toBottomOf="@id/ivAvatar"
+        app:layout_constraintEnd_toEndOf="@id/ivAvatar"
+        app:tint="@color/kd_public_normal" />
 
-        <!-- 角色右上角装饰 -->
-        <ImageView
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/ic_person"
-            android:tint="@color/pink_primary"
-            android:layout_gravity="top|end"
-            android:layout_margin="8dp"
-            android:background="@drawable/bg_circle_dark"
-            android:padding="8dp"/>
-
-    </FrameLayout>
-
-    <!-- 角色信息区域 -->
     <LinearLayout
-        android:layout_width="match_parent"
+        android:id="@+id/layoutMeta"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingTop="8dp"
-        android:paddingStart="4dp"
-        android:paddingEnd="4dp">
+        android:paddingTop="@dimen/kd_space_300"
+        android:paddingStart="@dimen/kd_space_100"
+        android:paddingEnd="@dimen/kd_space_100"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ivAvatar">
 
         <TextView
             android:id="@+id/tvName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="@color/text_primary"
-            android:textSize="20sp"
+            android:textSize="@dimen/kd_font_extra_large"
             android:textStyle="bold"
-            android:gravity="center"/>
+            android:gravity="center" />
 
-        <!-- 标签区域 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp">
+            android:paddingTop="@dimen/kd_space_250"
+            android:paddingBottom="@dimen/kd_space_200">
 
             <TextView
                 android:id="@+id/tvTag1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_tag"
-                android:textColor="@color/pink_primary"
-                android:textSize="14sp"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp"
-                android:layout_marginEnd="6dp"/>
+                android:textColor="@color/kd_text_public"
+                android:textSize="@dimen/kd_font_base"
+                android:paddingStart="@dimen/kd_space_300"
+                android:paddingEnd="@dimen/kd_space_300"
+                android:paddingTop="@dimen/kd_space_150"
+                android:paddingBottom="@dimen/kd_space_150"
+                android:layout_marginEnd="@dimen/kd_space_200" />
 
             <TextView
                 android:id="@+id/tvTag2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_tag"
-                android:textColor="@color/pink_primary"
-                android:textSize="14sp"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp"
-                android:layout_marginStart="6dp"/>
-
+                android:textColor="@color/kd_text_public"
+                android:textSize="@dimen/kd_font_base"
+                android:paddingStart="@dimen/kd_space_300"
+                android:paddingEnd="@dimen/kd_space_300"
+                android:paddingTop="@dimen/kd_space_150"
+                android:paddingBottom="@dimen/kd_space_150"
+                android:layout_marginStart="@dimen/kd_space_200" />
         </LinearLayout>
-
     </LinearLayout>
-
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

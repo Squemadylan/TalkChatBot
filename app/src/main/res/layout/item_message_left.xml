@@ -1,24 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:gravity="start"
-    android:paddingBottom="12dp">
+    android:paddingBottom="@dimen/kd_space_300">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivAvatar"
+        android:layout_width="@dimen/kd_chat_message_avatar"
+        android:layout_height="@dimen/kd_chat_message_avatar"
+        android:layout_marginEnd="@dimen/kd_space_300"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.CornerSize50Percent" />
 
     <LinearLayout
+        android:id="@+id/layoutBubble"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:maxWidth="280dp"
-        android:background="@color/dark_card"
-        android:padding="12dp">
+        android:background="@drawable/bg_assistant_bubble"
+        android:gravity="center_vertical"
+        android:maxWidth="@dimen/kd_message_bubble_max_width"
+        android:minWidth="@dimen/kd_space_1200"
+        android:orientation="horizontal"
+        android:padding="@dimen/kd_space_300"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintStart_toEndOf="@id/ivAvatar"
+        app:layout_constraintTop_toTopOf="parent">
 
         <TextView
             android:id="@+id/tvMessage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@color/text_primary"
-            android:textSize="14sp"/>
+            android:textSize="@dimen/kd_font_base" />
 
+        <ProgressBar
+            android:id="@+id/progressTyping"
+            android:layout_width="@dimen/kd_space_600"
+            android:layout_height="@dimen/kd_space_600"
+            android:layout_marginStart="@dimen/kd_space_100"
+            android:layout_marginEnd="@dimen/kd_space_100"
+            android:indeterminate="true"
+            android:visibility="gone" />
     </LinearLayout>
 
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

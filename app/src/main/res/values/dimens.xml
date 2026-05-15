@@ -1,6 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 支持的最小屏幕尺寸 -->
+    <!-- base.json KD-Number「标准」间距（数值即 dp） -->
+    <dimen name="kd_space_100">4dp</dimen>
+    <dimen name="kd_space_150">6dp</dimen>
+    <dimen name="kd_space_175">7dp</dimen>
+    <dimen name="kd_space_200">8dp</dimen>
+    <dimen name="kd_space_250">10dp</dimen>
+    <dimen name="kd_space_300">12dp</dimen>
+    <dimen name="kd_space_400">16dp</dimen>
+    <dimen name="kd_space_500">20dp</dimen>
+    <dimen name="kd_space_600">24dp</dimen>
+    <dimen name="kd_space_800">32dp</dimen>
+    <dimen name="kd_space_1000">40dp</dimen>
+    <dimen name="kd_space_1200">48dp</dimen>
+    <dimen name="kd_space_1400">56dp</dimen>
+    <dimen name="kd_space_1600">64dp</dimen>
+    <dimen name="kd_space_1800">72dp</dimen>
+
+    <!-- Font Size / kd-font-size-*（sp） -->
+    <dimen name="kd_font_extra_small">10sp</dimen>
+    <dimen name="kd_font_small">12sp</dimen>
+    <dimen name="kd_font_sub_base">13sp</dimen>
+    <dimen name="kd_font_base">14sp</dimen>
+    <dimen name="kd_font_middle">16sp</dimen>
+    <dimen name="kd_font_large">18sp</dimen>
+    <dimen name="kd_font_extra_large">20sp</dimen>
+    <dimen name="kd_font_xx_large">24sp</dimen>
+    <dimen name="kd_font_xxx_large">28sp</dimen>
+
+    <!-- Icon Size / kd-icon-size-*（标准） -->
+    <dimen name="kd_icon_small">12dp</dimen>
+    <dimen name="kd_icon_base">16dp</dimen>
+    <dimen name="kd_icon_middle">20dp</dimen>
+    <dimen name="kd_icon_large">24dp</dimen>
+
+    <!-- Border Radius / kd-border-radius-* -->
+    <dimen name="kd_radius_50">2dp</dimen>
+    <dimen name="kd_radius_100">4dp</dimen>
+    <dimen name="kd_radius_200">8dp</dimen>
+    <dimen name="kd_radius_300">12dp</dimen>
+
+    <!-- 常用组件高度（与界面控件对齐） -->
+    <dimen name="kd_touch_min">44dp</dimen>
+    <dimen name="kd_input_height">52dp</dimen>
+    <dimen name="kd_tab_height">52dp</dimen>
+    <dimen name="kd_avatar_display">100dp</dimen>
+    <dimen name="kd_character_banner_height">180dp</dimen>
+
+    <dimen name="kd_avatar_create_sheet">112dp</dimen>
+    <dimen name="kd_avatar_in_dialog">96dp</dimen>
+    <dimen name="kd_avatar_edit_btn">36dp</dimen>
+    <dimen name="kd_message_bubble_max_width">280dp</dimen>
+    <dimen name="kd_chat_message_avatar">40dp</dimen>
+
     <dimen name="screen_width_min">320dp</dimen>
     <dimen name="screen_height_min">480dp</dimen>
 </resources>

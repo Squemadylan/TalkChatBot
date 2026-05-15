@@ -11,5 +11,28 @@ data class Character(
     val description: String,
     val prompt: String,
     val tags: String,
+    val openingGreeting: String = "",
     val createdAt: Long = System.currentTimeMillis()
-)
+) {
+    fun systemPromptForChat(): String = buildString {
+        if (description.isNotBlank()) {
+            appendLine("【角色描述】")
+            appendLine(description.trim())
+            appendLine()
+        }
+        if (openingGreeting.isNotBlank()) {
+            appendLine("【主开场白】")
+            appendLine(openingGreeting.trim())
+            appendLine()
+        }
+        if (tags.isNotBlank()) {
+            appendLine("【标签】")
+            appendLine(tags.trim())
+            appendLine()
+        }
+        if (prompt.isNotBlank()) {
+            appendLine("【补充人设】")
+            appendLine(prompt.trim())
+        }
+    }.trim()
+}

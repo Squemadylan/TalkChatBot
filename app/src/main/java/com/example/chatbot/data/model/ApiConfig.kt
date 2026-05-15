@@ -10,5 +10,5 @@ data class ApiConfig(
     val apiKey: String = "",
     val model: String = "gpt-3.5-turbo",
     val temperature: Double = 0.7,
-    val maxTokens: Int = 1024
+    val maxTokens: Int = 4096
 )

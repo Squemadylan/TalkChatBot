@@ -12,8 +12,20 @@ interface MessageDao {
     @Query("SELECT * FROM messages WHERE characterId = :characterId ORDER BY timestamp ASC")
     fun getMessagesByCharacterId(characterId: Long): Flow<List<Message>>
 
+    @Query("SELECT * FROM messages ORDER BY timestamp DESC")
+    fun getAllMessagesFlow(): Flow<List<Message>>
+
+    @Query("DELETE FROM messages")
+    suspend fun deleteAllMessages()
+
     @Insert
-    suspend fun insertMessage(message: Message)
+    suspend fun insertMessage(message: Message): Long
+
+    @Query("UPDATE messages SET content = :content WHERE id = :id")
+    suspend fun updateMessageContent(id: Long, content: String)
+
+    @Query("DELETE FROM messages WHERE id = :id")
+    suspend fun deleteMessageById(id: Long)
 
     @Delete
     suspend fun deleteMessage(message: Message)
@@ -23,4 +35,12 @@ interface MessageDao {
 
     @Query("SELECT * FROM messages WHERE characterId = :characterId ORDER BY timestamp DESC LIMIT 1")
     suspend fun getLastMessage(characterId: Long): Message?
+
+    @Query(
+        "SELECT * FROM messages WHERE characterId = :characterId ORDER BY timestamp DESC LIMIT :limit"
+    )
+    suspend fun getRecentMessagesDesc(characterId: Long, limit: Int): List<Message>
+
+    @Query("SELECT COUNT(*) FROM messages WHERE characterId = :characterId")
+    suspend fun getMessageCount(characterId: Long): Int
 }

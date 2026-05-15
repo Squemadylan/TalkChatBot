@@ -1,6 +1,5 @@
 package com.example.chatbot.data.network
 
-import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.Headers
 import retrofit2.http.POST
@@ -10,7 +9,9 @@ data class ChatRequest(
     val model: String,
     val messages: List<MessageRequest>,
     val temperature: Double,
-    val max_tokens: Int
+    val max_tokens: Int,
+    /** 显式关闭流式，避免部分兼容网关默认 SSE 导致非 JSON 正文无法解析 */
+    val stream: Boolean = false
 )
 
 data class MessageRequest(
@@ -27,8 +28,8 @@ data class Choice(
 )
 
 data class MessageResponse(
-    val role: String,
-    val content: String
+    val role: String? = null,
+    val content: String? = null
 )
 
 interface ApiService {
@@ -37,5 +38,5 @@ interface ApiService {
     suspend fun sendMessage(
         @Url url: String,
         @Body body: ChatRequest
-    ): Response<ChatResponse>
+    ): ChatResponse
 }

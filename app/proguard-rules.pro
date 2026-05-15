@@ -6,6 +6,11 @@
 -keepclassmembers,allowshrinking,allowobfuscation interface * {
     @retrofit2.http.* <methods>;
 }
+# Kotlin suspend + Retrofit：避免 R8 full mode 下泛型擦除导致 Class cannot be cast to Type/ParameterizedType
+-keep,allowobfuscation,allowshrinking class retrofit2.Response { *; }
+-keep,allowobfuscation,allowshrinking class retrofit2.Call { *; }
+-keep,allowobfuscation,allowshrinking interface retrofit2.Call { *; }
+-keepnames class kotlin.coroutines.Continuation
 -dontwarn org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement
 -dontwarn javax.annotation.**
 -dontwarn kotlin.Unit
@@ -81,6 +86,10 @@
     public static int d(...);
     public static int i(...);
 }
+
+# Markwon / CommonMark（R8 精简时避免误删或告警）
+-dontwarn org.commonmark.**
+-dontwarn javax.lang.model.element.**
 
 # Keep custom exceptions
 -keep public class * extends java.lang.Exception

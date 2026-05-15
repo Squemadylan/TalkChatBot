@@ -1,89 +1,150 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/dark_card"
-    android:padding="16dp"
-    android:layout_margin="16dp">
+    android:background="@drawable/bg_sheet_top_rounded">
 
-    <TextView
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="添加角色"
-        android:textColor="@color/text_primary"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:paddingBottom="16dp"/>
+        android:layout_height="@dimen/kd_touch_min"
+        android:paddingStart="@dimen/kd_space_200"
+        android:paddingEnd="@dimen/kd_space_200">
 
-    <EditText
-        android:id="@+id/etName"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="角色名称"
-        android:textColor="@color/text_primary"
-        android:textColorHint="@color/text_secondary"
-        android:background="@color/dark_background"
-        android:padding="12dp"
-        android:layout_marginBottom="12dp"/>
-
-    <EditText
-        android:id="@+id/etDescription"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="角色描述"
-        android:textColor="@color/text_primary"
-        android:textColorHint="@color/text_secondary"
-        android:background="@color/dark_background"
-        android:padding="12dp"
-        android:layout_marginBottom="12dp"/>
-
-    <EditText
-        android:id="@+id/etPrompt"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="人设提示词"
-        android:textColor="@color/text_primary"
-        android:textColorHint="@color/text_secondary"
-        android:background="@color/dark_background"
-        android:padding="12dp"
-        android:layout_marginBottom="12dp"/>
-
-    <EditText
-        android:id="@+id/etTags"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="标签（用逗号分隔）"
-        android:textColor="@color/text_primary"
-        android:textColorHint="@color/text_secondary"
-        android:background="@color/dark_background"
-        android:padding="12dp"
-        android:layout_marginBottom="16dp"/>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/btnCancel"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:text="取消"
+        <TextView
+            android:id="@+id/btnClose"
+            android:layout_width="@dimen/kd_touch_min"
+            android:layout_height="@dimen/kd_touch_min"
+            android:layout_gravity="start|center_vertical"
+            android:gravity="center"
+            android:text="×"
             android:textColor="@color/text_secondary"
-            android:background="@color/dark_background"
-            android:layout_marginEnd="8dp"/>
+            android:textSize="@dimen/kd_font_xxx_large"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="关闭" />
 
-        <Button
-            android:id="@+id/btnSave"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:text="保存"
+        <TextView
+            android:id="@+id/tvSheetTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="创建角色"
             android:textColor="@color/text_primary"
-            android:background="@color/pink_primary"/>
+            android:textSize="@dimen/kd_font_extra_large"
+            android:textStyle="bold" />
+    </FrameLayout>
 
-    </LinearLayout>
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:clipToPadding="false"
+        android:paddingStart="@dimen/kd_space_400"
+        android:paddingEnd="@dimen/kd_space_400"
+        android:paddingBottom="@dimen/kd_space_400">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="@dimen/kd_space_300"
+                android:layout_marginBottom="@dimen/kd_space_400">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/ivDialogAvatar"
+                    android:layout_width="@dimen/kd_avatar_create_sheet"
+                    android:layout_height="@dimen/kd_avatar_create_sheet"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_person"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.CornerSize50Percent"
+                    app:strokeColor="@color/kd_line_regular"
+                    app:strokeWidth="1dp" />
+
+                <ImageButton
+                    android:id="@+id/btnRandomAvatar"
+                    android:layout_width="@dimen/kd_avatar_edit_btn"
+                    android:layout_height="@dimen/kd_avatar_edit_btn"
+                    android:layout_gravity="bottom|start"
+                    android:layout_margin="@dimen/kd_space_200"
+                    android:background="@drawable/bg_circle_orange"
+                    android:contentDescription="随机头像"
+                    android:padding="@dimen/kd_space_200"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_sync"
+                    app:tint="@color/kd_color_white" />
+
+                <ImageButton
+                    android:id="@+id/btnPickDialogAvatar"
+                    android:layout_width="@dimen/kd_avatar_edit_btn"
+                    android:layout_height="@dimen/kd_avatar_edit_btn"
+                    android:layout_gravity="bottom|end"
+                    android:layout_margin="@dimen/kd_space_200"
+                    android:background="@drawable/bg_avatar_edit"
+                    android:contentDescription="从相册选择头像"
+                    android:padding="@dimen/kd_space_200"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_image"
+                    app:tint="@color/kd_public_normal" />
+            </FrameLayout>
+
+            <EditText
+                android:id="@+id/etName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/kd_space_500"
+                android:background="@drawable/bg_input_radius"
+                android:gravity="center"
+                android:hint="新角色"
+                android:inputType="textPersonName"
+                android:maxLength="500"
+                android:maxLines="1"
+                android:paddingHorizontal="@dimen/kd_space_400"
+                android:paddingVertical="@dimen/kd_space_300"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_secondary"
+                android:textSize="@dimen/kd_font_xx_large"
+                android:textStyle="bold" />
+
+            <include
+                android:id="@+id/rowTags"
+                layout="@layout/view_character_setting_row" />
+
+            <include
+                android:id="@+id/rowDescription"
+                layout="@layout/view_character_setting_row" />
+
+            <include
+                android:id="@+id/rowOpening"
+                layout="@layout/view_character_setting_row" />
+
+            <include
+                android:id="@+id/rowAlternate"
+                layout="@layout/view_character_setting_row" />
+
+            <include
+                android:id="@+id/rowExamples"
+                layout="@layout/view_character_setting_row" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <Button
+        android:id="@+id/btnSave"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/kd_space_1200"
+        android:layout_marginStart="@dimen/kd_space_400"
+        android:layout_marginEnd="@dimen/kd_space_400"
+        android:layout_marginBottom="@dimen/kd_space_500"
+        android:background="@drawable/bg_button_radius"
+        android:text="创建角色"
+        android:textColor="@color/text_on_primary"
+        android:textSize="@dimen/kd_font_middle"
+        android:textStyle="bold" />
 
 </LinearLayout>

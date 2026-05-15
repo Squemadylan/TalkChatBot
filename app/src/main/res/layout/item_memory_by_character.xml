@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/bg_card_radius"
+    android:padding="@dimen/kd_space_400"
+    android:layout_marginStart="@dimen/kd_space_400"
+    android:layout_marginEnd="@dimen/kd_space_400"
+    android:layout_marginBottom="@dimen/kd_space_300"
+    android:minHeight="@dimen/kd_touch_min">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivAvatar"
+        android:layout_width="@dimen/kd_space_1200"
+        android:layout_height="@dimen/kd_space_1200"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_person"
+        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.App.CornerSize50Percent"
+        app:strokeColor="@color/kd_line_regular"
+        app:strokeWidth="1dp" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="@dimen/kd_space_400">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tvName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/kd_font_middle"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/tvDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/kd_font_small"
+                android:layout_marginStart="@dimen/kd_space_300" />
+
+            <ImageButton
+                android:id="@+id/btnMenu"
+                android:layout_width="@dimen/kd_touch_min"
+                android:layout_height="@dimen/kd_touch_min"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="更多"
+                android:padding="@dimen/kd_space_200"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_more_vert" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvSnippet"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/kd_space_200"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/kd_font_base"
+            android:maxLines="2"
+            android:ellipsize="end" />
+    </LinearLayout>
+</LinearLayout>

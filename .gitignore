@@ -1,0 +1,23 @@
+# Gradle / Android
+.gradle/
+**/build/
+local.properties
+*.iml
+.idea/
+.DS_Store
+.externalNativeBuild/
+.cxx/
+
+# Cursor / local
+.cursor/
+
+# Design export (large; not required to build)
+base.json
+
+# Accidental captures
+captures/
+tmp-memory*.png
+
+# Built artifacts (use CI or manual upload for APK/AAB)
+*.apk
+*.aab

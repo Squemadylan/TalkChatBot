@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/kd_touch_min"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/bg_input_radius"
+    android:paddingStart="@dimen/kd_space_400"
+    android:paddingEnd="@dimen/kd_space_400"
+    android:layout_marginBottom="@dimen/kd_space_300"
+    android:clickable="true"
+    android:focusable="true"
+    android:minHeight="@dimen/kd_touch_min">
+
+    <ImageView
+        android:id="@+id/rowIcon"
+        android:layout_width="@dimen/kd_icon_large"
+        android:layout_height="@dimen/kd_icon_large"
+        android:contentDescription="@null"
+        tools:src="@drawable/ic_label" />
+
+    <TextView
+        android:id="@+id/rowLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/kd_space_300"
+        android:textColor="@color/text_primary"
+        android:textSize="@dimen/kd_font_base"
+        tools:text="标签" />
+
+    <TextView
+        android:id="@+id/rowValue"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="@dimen/kd_space_300"
+        android:gravity="end"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textColor="@color/text_secondary"
+        android:textSize="@dimen/kd_font_small"
+        tools:text="无标签" />
+
+    <ImageView
+        android:id="@+id/rowChevron"
+        android:layout_width="@dimen/kd_icon_middle"
+        android:layout_height="@dimen/kd_icon_middle"
+        android:layout_marginStart="@dimen/kd_space_200"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_arrow_right"
+        app:tint="@color/kd_icon_secondary" />
+</LinearLayout>

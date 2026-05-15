@@ -1,203 +1,465 @@
 package com.example.chatbot.ui.chat
 
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.appcompat.widget.PopupMenu
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavOptions
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.chatbot.App
 import com.example.chatbot.R
 import com.example.chatbot.data.repository.ApiConfigRepository
+import com.example.chatbot.data.repository.CharacterRepository
 import com.example.chatbot.data.repository.MessageRepository
 import com.example.chatbot.databinding.FragmentChatBinding
+import com.example.chatbot.ui.common.ConfirmDialog
+import com.example.chatbot.util.AvatarStorage
 import com.example.chatbot.viewmodel.ChatViewModel
+import com.example.chatbot.viewmodel.ChatViewModelFactory
+import io.noties.markwon.Markwon
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.util.Locale
 
 class ChatFragment : Fragment() {
 
     private var _binding: FragmentChatBinding? = null
-    private val binding get() = _binding ?: throw IllegalStateException("Binding is not initialized or already destroyed")
+    private val binding get() = _binding
 
-    private lateinit var viewModel: ChatViewModel
-    private lateinit var adapter: MessageAdapter
+    private var viewModel: ChatViewModel? = null
+    private var messageAdapter: MessageAdapter? = null
+    private var memoryAdapter: MemoryCharacterAdapter? = null
+    private var markwon: Markwon? = null
 
     private var characterId: Long = 0
+    private var lastAppliedArgCharacterId: Long = Long.MIN_VALUE
     private var characterPrompt: String = ""
+    private var characterAvatarPath: String = ""
+    private var characterDisplayName: String = ""
+    private var characterOpeningGreeting: String = ""
+    private var hasSentGreeting: Boolean = false
 
-    private var currentPage = 1
-    private var totalPages = 1
-    private var pageSize = 10
+    private var hubRowsCache: List<MemoryHubRow> = emptyList()
+    private var searchQuery: String = ""
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
-        try {
+    ): View? {
+        return try {
             _binding = FragmentChatBinding.inflate(inflater, container, false)
+            binding?.root
         } catch (e: Exception) {
-            showError("Failed to inflate layout: ${e.message}")
-            return View(requireContext())
+            android.util.Log.e(TAG, "Failed to inflate binding", e)
+            if (isAdded) {
+                Toast.makeText(requireContext(), "聊天页面加载失败", Toast.LENGTH_SHORT).show()
+            }
+            null
         }
-
-        characterId = arguments?.getLong(ARG_CHARACTER_ID, 0) ?: 0
-
-        if (!isAppInitialized()) {
-            showError("App initialization failed")
-            return binding.root
-        }
-
-        initializeViewModel()
-        setupRecyclerView()
-        setupSendButton()
-        setupPagination()
-        setupSearchAndDelete()
-        observeData()
-
-        return binding.root
     }
 
-    private fun isAppInitialized(): Boolean {
-        return try {
-            val app = requireActivity().application as? App
-            app?.isDatabaseInitialized() == true
-        } catch (e: Exception) {
-            false
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        if (_binding == null) {
+            if (isAdded) {
+                Toast.makeText(requireContext(), "聊天页面加载失败", Toast.LENGTH_SHORT).show()
+            }
+            return
+        }
+
+        markwon = Markwon.create(requireContext())
+
+        initializeViewModel()
+        applyCharacterContextFromArgs(isInitial = true)
+        setupRecyclerForCurrentMode()
+        setupSendButton()
+        setupSearchAndDelete()
+        setupHubSearchFilter()
+        setupBackNavigation()
+        observeData()
+    }
+
+    /** 与系统返回键一致：弹出当前聊天页（由 NavHostFragment 处理物理返回，此处仅左上角按钮） */
+    private fun navigateBackFromChat() {
+        if (!isAdded) return
+        val nav = findNavController()
+        if (!nav.popBackStack()) {
+            nav.navigate(R.id.characterFragment)
+        }
+    }
+
+    private fun setupBackNavigation() {
+        binding?.btnBack?.setOnClickListener { navigateBackFromChat() }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        applyCharacterContextFromArgs(isInitial = false)
+        applyChatBackground()
+        applyMessageAdapterDisplay()
+        if (characterId == 0L) {
+            applyUserPlaceholdersToMemoryAdapter()
+            binding?.recyclerView?.post { memoryAdapter?.notifyDataSetChanged() }
+        }
+    }
+
+    private fun readArgCharacterId(): Long =
+        arguments?.getLong(ARG_CHARACTER_ID, 0L) ?: 0L
+
+    private fun applyCharacterContextFromArgs(isInitial: Boolean) {
+        val argId = readArgCharacterId()
+        if (argId == lastAppliedArgCharacterId && !isInitial) return
+        lastAppliedArgCharacterId = argId
+        characterId = argId
+        viewModel?.setActiveCharacterId(characterId)
+        if (_binding == null) return
+
+        if (characterId == 0L) {
+            binding?.layoutInputBar?.visibility = View.GONE
+            characterPrompt = ""
+            characterAvatarPath = ""
+            characterDisplayName = ""
+            setupRecyclerForCurrentMode()
+            submitHubList()
+        } else {
+            binding?.layoutInputBar?.visibility = View.VISIBLE
+            loadCharacterSystemPrompt()
+            setupRecyclerForCurrentMode()
+        }
+    }
+
+    private fun setupRecyclerForCurrentMode() {
+        if (_binding == null) return
+        if (characterId == 0L) {
+            if (memoryAdapter == null) {
+                memoryAdapter = MemoryCharacterAdapter(
+                    onOpenChat = { id ->
+                        findNavController().navigate(
+                            R.id.chatFragment,
+                            Bundle().apply { putLong(ARG_CHARACTER_ID, id) },
+                            NavOptions.Builder().setLaunchSingleTop(true).build()
+                        )
+                    },
+                    onMenu = { row, anchor -> showMemoryRowMenu(row, anchor) }
+                )
+            }
+            binding?.recyclerView?.layoutManager = LinearLayoutManager(requireContext())
+            binding?.recyclerView?.adapter = memoryAdapter
+        } else {
+            if (messageAdapter == null) {
+                messageAdapter = MessageAdapter(markwon!!) {
+                    viewModel?.streamingAssistantMessageIdForUi() ?: -1L
+                }
+            }
+            binding?.recyclerView?.layoutManager = LinearLayoutManager(requireContext())
+            binding?.recyclerView?.itemAnimator = null
+            binding?.recyclerView?.adapter = messageAdapter
+            applyMessageAdapterDisplay()
         }
     }
 
     private fun initializeViewModel() {
         try {
-            val app = requireActivity().application as App
+            val app = requireActivity().application as? App
+            if (app == null) {
+                showToast("应用初始化失败")
+                return
+            }
+
+            if (!app.isDatabaseInitialized()) {
+                showToast("数据库初始化中，请稍后")
+                return
+            }
+
             val messageRepository = MessageRepository(app.database.messageDao())
             val apiConfigRepository = ApiConfigRepository(app.database.apiConfigDao())
+            val characterRepository = CharacterRepository(app.database.characterDao())
 
-            viewModel = ViewModelProvider(this) {
-                ChatViewModel(messageRepository, apiConfigRepository)
-            }.get(ChatViewModel::class.java)
+            viewModel = ViewModelProvider(
+                requireActivity(),
+                ChatViewModelFactory(messageRepository, apiConfigRepository, characterRepository)
+            )[ChatViewModel::class.java]
         } catch (e: Exception) {
-            showError("Failed to initialize ViewModel: ${e.message}")
+            android.util.Log.e(TAG, "Failed to initialize ViewModel", e)
+            showToast("ViewModel初始化失败")
         }
     }
 
-    private fun observeData() {
-        if (!::viewModel.isInitialized) return
-
-        viewModel.getMessages(characterId).observe(viewLifecycleOwner) { messages ->
-            safeAction {
-                adapter.submitList(messages)
-                totalPages = if (messages.isEmpty()) 1 else (messages.size + pageSize - 1) / pageSize
-                binding.tvPageInfo.text = "$currentPage/$totalPages"
-
-                if (messages.isNotEmpty()) {
-                    binding.recyclerView.scrollToPosition(messages.size - 1)
-                }
-            }
+    private fun loadCharacterSystemPrompt() {
+        if (characterId == 0L) {
+            characterPrompt = ""
+            characterAvatarPath = ""
+            characterDisplayName = ""
+            characterOpeningGreeting = ""
+            hasSentGreeting = false
+            return
         }
-
-        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            safeAction {
-                binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
-                binding.btnSend.isEnabled = !isLoading
-            }
-        }
-
-        viewModel.errorMessage.observe(viewLifecycleOwner) { error ->
-            error?.let {
-                safeAction {
-                    showToast(it)
+        val app = activity?.application as? App ?: return
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val character = withContext(Dispatchers.IO) {
+                    try {
+                        app.database.characterDao().getCharacterById(characterId)
+                    } catch (_: Exception) {
+                        null
+                    }
                 }
+                characterPrompt = character?.systemPromptForChat().orEmpty()
+                characterAvatarPath = character?.avatar.orEmpty()
+                characterDisplayName = character?.name?.trim().orEmpty()
+                characterOpeningGreeting = character?.openingGreeting?.trim().orEmpty()
+                withContext(Dispatchers.Main) {
+                    applyMessageAdapterDisplay()
+                    checkAndSendGreeting()
+                }
+            } catch (e: Exception) {
+                android.util.Log.e(TAG, "loadCharacterSystemPrompt failed", e)
             }
         }
     }
 
-    private fun setupRecyclerView() {
-        try {
-            adapter = MessageAdapter()
-            binding.recyclerView.layoutManager = LinearLayoutManager(context)
-            binding.recyclerView.adapter = adapter
-        } catch (e: Exception) {
-            showError("Failed to setup RecyclerView: ${e.message}")
+    private fun checkAndSendGreeting() {
+        if (characterOpeningGreeting.isBlank() || characterId == 0L) return
+        if (viewModel == null) return
+
+        val app = activity?.application as? App ?: return
+        viewLifecycleOwner.lifecycleScope.launch {
+            val hasMessages = withContext(Dispatchers.IO) {
+                try {
+                    app.database.messageDao().getMessageCount(characterId) > 0
+                } catch (_: Exception) {
+                    false
+                }
+            }
+            if (!hasMessages) {
+                viewModel?.sendGreetingMessage(characterId, characterOpeningGreeting, characterPrompt, requireContext())
+            }
         }
+    }
+
+    private fun prefs() =
+        requireContext().applicationContext.getSharedPreferences(App.PREFS_NAME, android.content.Context.MODE_PRIVATE)
+
+    private fun applyChatBackground() {
+        if (_binding == null || !isAdded) return
+        val path = prefs().getString(App.KEY_CHAT_BACKGROUND_PATH, null)
+        val iv = binding?.ivChatBackground ?: return
+        if (path.isNullOrBlank() || !File(path).exists()) {
+            iv.visibility = View.GONE
+            iv.setImageDrawable(null)
+            return
+        }
+        iv.scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+        AvatarStorage.loadInto(iv, path)
+        iv.visibility = View.VISIBLE
+    }
+
+    private fun applyMessageAdapterDisplay() {
+        if (_binding == null || characterId == 0L || !isAdded) return
+        applyUserPlaceholdersToMessageAdapter()
+        val show = prefs().getBoolean(App.KEY_CHAT_SHOW_AVATARS, true)
+        val userPath = prefs().getString(App.KEY_USER_AVATAR_PATH, null)
+        val charPath = characterAvatarPath.ifBlank { null }
+        messageAdapter?.updateChatDisplay(show, charPath, userPath)
+    }
+
+    private fun applyUserPlaceholdersToMessageAdapter() {
+        if (_binding == null || characterId == 0L || !isAdded) return
+        val name = prefs().getString(App.KEY_USER_DISPLAY_NAME, null)?.trim()?.takeIf { it.isNotEmpty() }
+            ?: "用户"
+        val persona = prefs().getString(App.KEY_USER_PERSONA, null)?.trim().orEmpty()
+        messageAdapter?.updateUserPlaceholders(name, persona, characterDisplayName)
+    }
+
+    private fun applyUserPlaceholdersToMemoryAdapter() {
+        if (_binding == null || characterId != 0L || !isAdded) return
+        val name = prefs().getString(App.KEY_USER_DISPLAY_NAME, null)?.trim()?.takeIf { it.isNotEmpty() }
+            ?: "用户"
+        val persona = prefs().getString(App.KEY_USER_PERSONA, null)?.trim().orEmpty()
+        memoryAdapter?.updateUserPlaceholders(name, persona)
     }
 
     private fun setupSendButton() {
-        binding.btnSend.setOnClickListener {
-            val message = binding.etMessage.text.toString().trim()
+        binding?.btnSend?.setOnClickListener {
+            val message = binding?.etMessage?.text?.toString()?.trim() ?: ""
             if (message.isNotEmpty()) {
-                binding.etMessage.text.clear()
-                viewModel.sendMessage(characterId, message, characterPrompt, requireContext())
+                checkApiConfigAndSend(message)
             } else {
                 showToast("请输入消息")
             }
         }
     }
 
-    private fun setupPagination() {
-        binding.btnFirstPage.setOnClickListener {
-            if (currentPage > 1) {
-                currentPage = 1
-                updatePageInfo()
-                showToast("第一页")
-            }
+    private fun checkApiConfigAndSend(message: String) {
+        if (characterId == 0L) return
+        if (viewModel == null) {
+            showToast("请先配置大模型API")
+            return
         }
 
-        binding.btnPrevPage.setOnClickListener {
-            if (currentPage > 1) {
-                currentPage--
-                updatePageInfo()
-                showToast("上一页")
-            }
+        if (_binding == null) {
+            showToast("聊天页面未正确加载")
+            return
         }
 
-        binding.btnNextPage.setOnClickListener {
-            if (currentPage < totalPages) {
-                currentPage++
-                updatePageInfo()
-                showToast("下一页")
-            }
-        }
-
-        binding.btnLastPage.setOnClickListener {
-            if (currentPage < totalPages) {
-                currentPage = totalPages
-                updatePageInfo()
-                showToast("最后一页")
-            }
-        }
-
-        binding.btnPageSize.setOnClickListener {
-            pageSize = if (pageSize == 10) 20 else 10
-            binding.btnPageSize.text = "$pageSize条/页"
-            showToast("每页显示$pageSize条")
-        }
+        binding?.etMessage?.text?.clear()
+        viewModel?.sendMessage(characterId, message, characterPrompt, requireContext())
     }
 
-    private fun updatePageInfo() {
-        safeAction {
-            binding.tvPageInfo.text = "$currentPage/$totalPages"
-        }
+    private fun setupHubSearchFilter() {
+        binding?.etSearch?.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                searchQuery = s?.toString()?.trim()?.lowercase(Locale.getDefault()).orEmpty()
+                submitHubList()
+            }
+        })
     }
 
     private fun setupSearchAndDelete() {
-        binding.btnDelete.setOnClickListener {
-            showToast("删除功能")
-        }
-
-        binding.etSearch.setOnClickListener {
-            showToast("搜索回忆")
+        binding?.btnDelete?.setOnClickListener {
+            if (characterId != 0L) {
+                ConfirmDialog(
+                    title = "清空对话记录",
+                    message = "确定删除与该角色的全部聊天记录？（角色保留）",
+                    positiveText = "清空"
+                ) {
+                    viewModel?.deleteMessagesForCharacter(characterId)
+                    showToast("已清空对话记录")
+                }.show(childFragmentManager, "ClearChatDialog_$characterId")
+                return@setOnClickListener
+            }
+            ConfirmDialog(
+                title = "清空所有回忆",
+                message = "将删除所有角色下的全部聊天记录，且不可恢复。确定继续？",
+                positiveText = "清空"
+            ) {
+                viewModel?.deleteAllMessages()
+                showToast("已清空全部回忆")
+            }.show(childFragmentManager, "ClearAllChatDialog")
         }
     }
 
-    private fun safeAction(action: () -> Unit) {
-        try {
-            if (isAdded && _binding != null) {
-                action()
+    private fun showMemoryRowMenu(row: MemoryHubRow, anchor: View) {
+        val popup = PopupMenu(requireContext(), anchor)
+        popup.menu.add(0, MENU_CLEAR_CHARACTER, 0, "清空该角色回忆")
+        popup.menu.add(0, MENU_DELETE_CHARACTER, 1, "删除角色（含全部回忆）")
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                MENU_CLEAR_CHARACTER -> {
+                    anchor.post {
+                        if (!isAdded) return@post
+                        ConfirmDialog(
+                            title = "清空回忆",
+                            message = "确定删除「${row.character.name}」的全部聊天记录？（角色保留）",
+                            positiveText = "清空",
+                            onConfirm = {
+                                viewModel?.deleteMessagesForCharacter(row.character.id)
+                                showToast("已清空该角色回忆")
+                            }
+                        ).show(childFragmentManager, "ClearMemory_${row.character.id}")
+                    }
+                    true
+                }
+                MENU_DELETE_CHARACTER -> {
+                    anchor.post {
+                        if (!isAdded) return@post
+                        ConfirmDialog(
+                            title = "删除角色",
+                            message = "将永久删除角色「${row.character.name}」及其全部聊天记录，不可恢复。确定？",
+                            positiveText = "删除",
+                            onConfirm = {
+                                viewModel?.deleteCharacterWithMessages(row.character.id)
+                                showToast("已删除角色")
+                            }
+                        ).show(childFragmentManager, "DeleteCharacter_${row.character.id}")
+                    }
+                    true
+                }
+                else -> false
             }
-        } catch (e: Exception) {
-            android.util.Log.e(TAG, "Safe action failed", e)
+        }
+        popup.show()
+    }
+
+    private fun filteredHubRows(): List<MemoryHubRow> {
+        if (searchQuery.isEmpty()) return hubRowsCache
+        return hubRowsCache.filter { row ->
+            val name = row.character.name.lowercase(Locale.getDefault())
+            val snippet = row.lastMessage?.content?.lowercase(Locale.getDefault()).orEmpty()
+            name.contains(searchQuery) || snippet.contains(searchQuery)
+        }
+    }
+
+    private fun submitHubList() {
+        if (characterId != 0L) return
+        applyUserPlaceholdersToMemoryAdapter()
+        memoryAdapter?.submitList(filteredHubRows())
+    }
+
+    private fun observeData() {
+        val vm = viewModel ?: return
+
+        vm.memoryHubRows.observe(viewLifecycleOwner) { rows ->
+            if (!isAdded || _binding == null) return@observe
+            hubRowsCache = rows ?: emptyList()
+            if (characterId == 0L) {
+                submitHubList()
+            }
+        }
+
+        vm.assistantMarkdownRefresh.observe(viewLifecycleOwner) { messageId ->
+            if (!isAdded || _binding == null) return@observe
+            if (messageId > 0L) {
+                messageAdapter?.refreshAssistantMarkdown(messageId)
+            }
+        }
+
+        vm.messagesForActiveCharacter.observe(viewLifecycleOwner) { messages ->
+            if (!isAdded || _binding == null) return@observe
+            if (characterId == 0L) return@observe
+
+            try {
+                applyUserPlaceholdersToMessageAdapter()
+                messageAdapter?.submitList(messages)
+                if (messages.isNotEmpty()) {
+                    binding?.recyclerView?.scrollToPosition(messages.size - 1)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e(TAG, "Error updating messages", e)
+            }
+        }
+
+        vm.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            if (!isAdded || _binding == null) return@observe
+
+            try {
+                binding?.progressBar?.visibility = View.GONE
+                binding?.btnSend?.isEnabled = !isLoading
+            } catch (e: Exception) {
+                android.util.Log.e(TAG, "Error updating loading state", e)
+            }
+        }
+
+        vm.errorMessage.observe(viewLifecycleOwner) { error ->
+            error?.let {
+                if (isAdded && _binding != null) {
+                    showToast(it)
+                }
+            }
         }
     }
 
@@ -207,20 +469,18 @@ class ChatFragment : Fragment() {
         }
     }
 
-    private fun showError(message: String) {
-        android.util.Log.e(TAG, message)
-        if (isAdded && context != null) {
-            Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
-        }
-    }
-
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+        messageAdapter = null
+        memoryAdapter = null
+        markwon = null
     }
 
     companion object {
         private const val TAG = "ChatFragment"
-        private const val ARG_CHARACTER_ID = "characterId"
+        const val ARG_CHARACTER_ID = "characterId"
+        private const val MENU_CLEAR_CHARACTER = 1
+        private const val MENU_DELETE_CHARACTER = 2
     }
 }

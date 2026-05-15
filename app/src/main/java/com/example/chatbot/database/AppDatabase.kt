@@ -8,7 +8,7 @@ import com.example.chatbot.data.model.Message
 
 @Database(
     entities = [Character::class, Message::class, ApiConfig::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
