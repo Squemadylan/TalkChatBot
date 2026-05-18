@@ -8,11 +8,7 @@ class ApiConfigRepository(private val apiConfigDao: ApiConfigDao) {
         return apiConfigDao.getApiConfig()
     }
 
-    suspend fun insertApiConfig(config: ApiConfig) {
-        apiConfigDao.insertApiConfig(config)
-    }
-
-    suspend fun updateApiConfig(config: ApiConfig) {
-        apiConfigDao.updateApiConfig(config)
+    suspend fun saveApiConfig(config: ApiConfig) {
+        apiConfigDao.upsertApiConfig(config)
     }
 }

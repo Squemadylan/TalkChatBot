@@ -1,5 +1,6 @@
 package com.example.chatbot.data.network
 
+import com.google.gson.annotations.SerializedName
 import retrofit2.http.Body
 import retrofit2.http.Headers
 import retrofit2.http.POST
@@ -9,7 +10,8 @@ data class ChatRequest(
     val model: String,
     val messages: List<MessageRequest>,
     val temperature: Double,
-    val max_tokens: Int,
+    @SerializedName("max_tokens")
+    val maxTokens: Int,
     /** 显式关闭流式，避免部分兼容网关默认 SSE 导致非 JSON 正文无法解析 */
     val stream: Boolean = false
 )

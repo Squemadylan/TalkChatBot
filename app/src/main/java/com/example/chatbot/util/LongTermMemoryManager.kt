@@ -9,7 +9,9 @@ import com.example.chatbot.data.network.MessageRequest
 import com.example.chatbot.data.network.RetrofitClient
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
+import java.util.concurrent.ConcurrentHashMap
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -20,6 +22,10 @@ import java.util.Locale
 
 object LongTermMemoryManager {
     private const val TAG = "LongTermMemoryManager"
+    /** 参与记忆摘要的最大消息条数，避免超长聊天记录拖慢后台任务 */
+    private const val MAX_MESSAGES_FOR_SUMMARY = 500
+
+    private val refreshMutexByCharacter = ConcurrentHashMap<Long, Mutex>()
     private const val MEMORY_DIR = "long_term_memory"
     private const val MEMORY_FILE_PREFIX = "memory_"
     private const val MEMORY_FILE_EXTENSION = ".md"
@@ -420,7 +426,7 @@ object LongTermMemoryManager {
                 model = modelName,
                 messages = listOf(MessageRequest("user", prompt)),
                 temperature = apiConfig.temperature.coerceIn(0.0, 2.0),
-                max_tokens = 2048,
+                maxTokens = 2048,
                 stream = false
             )
 
@@ -429,7 +435,6 @@ object LongTermMemoryManager {
             val jsonMediaType = "application/json".toMediaType()
             val requestBody = gson.toJson(request)
             
-            Log.d(TAG, "    ║ Request JSON (full): $requestBody")
             Log.d(TAG, "    ║ → 发送HTTP请求...")
 
             val httpRequest = Request.Builder()
@@ -496,7 +501,7 @@ object LongTermMemoryManager {
                 model = modelName,
                 messages = listOf(MessageRequest("user", prompt)),
                 temperature = apiConfig.temperature.coerceIn(0.0, 2.0),
-                max_tokens = 2048,
+                maxTokens = 2048,
                 stream = false
             )
 
@@ -539,57 +544,74 @@ object LongTermMemoryManager {
         return lastDate != today
     }
 
+    /**
+     * 聊天发消息路径：只读本地已保存记忆，不触发 API（避免发消息前同步等待整段摘要生成导致界面卡死）。
+     */
+    suspend fun getCachedMemoryForChat(context: Context, characterId: Long): String {
+        return loadMemory(context, characterId).orEmpty()
+    }
+
+    /**
+     * 后台刷新长期记忆（每日至多一次）。若已有同角色任务在执行则跳过。
+     * @return 是否成功触发并完成一次生成
+     */
+    suspend fun refreshMemoryIfNeeded(
+        context: Context,
+        characterId: Long,
+        apiConfig: com.example.chatbot.data.model.ApiConfig,
+        allMessages: List<Message>,
+        onGenerationStarted: (suspend () -> Unit)? = null
+    ): Boolean = withContext(Dispatchers.IO) {
+        val trimmed = trimMessagesForSummary(allMessages)
+        if (!shouldRefreshMemoryToday(context, characterId, trimmed.size)) {
+            return@withContext false
+        }
+
+        val mutex = refreshMutexByCharacter.getOrPut(characterId) { Mutex() }
+        if (!mutex.tryLock()) {
+            Log.d(TAG, "Memory refresh already in progress for character $characterId")
+            return@withContext false
+        }
+        try {
+            if (!shouldRefreshMemoryToday(context, characterId, trimmed.size)) {
+                return@withContext false
+            }
+            Log.d(TAG, "Background memory refresh started for character $characterId")
+            onGenerationStarted?.invoke()
+            val result = generateAndSaveMemory(context, characterId, trimmed, apiConfig)
+            result.isSuccess
+        } catch (e: Exception) {
+            Log.e(TAG, "Background memory refresh failed for character $characterId", e)
+            false
+        } finally {
+            mutex.unlock()
+        }
+    }
+
+    private fun trimMessagesForSummary(allMessages: List<Message>): List<Message> {
+        if (allMessages.size <= MAX_MESSAGES_FOR_SUMMARY) return allMessages
+        return allMessages.sortedBy { it.timestamp }.takeLast(MAX_MESSAGES_FOR_SUMMARY)
+    }
+
+    private suspend fun shouldRefreshMemoryToday(
+        context: Context,
+        characterId: Long,
+        messageCount: Int
+    ): Boolean {
+        if (messageCount < 5) return false
+        val today = getDateString()
+        val lastGenerateDate = getLastGenerateDate(context, characterId)
+        return lastGenerateDate != today
+    }
+
+    /** @deprecated 请使用 [getCachedMemoryForChat] + [refreshMemoryIfNeeded] */
+    @Suppress("UNUSED_PARAMETER")
     suspend fun getMemoryWithApi(
         context: Context,
         characterId: Long,
         apiConfig: com.example.chatbot.data.model.ApiConfig,
         allMessages: List<Message>
-    ): String {
-        Log.d(TAG, "╔══════════════════════════════════════════════════════╗")
-        Log.d(TAG, "║         [getMemoryWithApi] 永久记忆获取入口          ║")
-        Log.d(TAG, "╠══════════════════════════════════════════════════════╣")
-        Log.d(TAG, "║ CharacterID: $characterId")
-        Log.d(TAG, "║ Total Messages: ${allMessages.size}")
-        
-        val today = getDateString()
-        val lastGenerateDate = getLastGenerateDate(context, characterId)
-        val lastTimestamp = getLastMessageTimestamp(context, characterId)
-        val savedMemory = loadMemory(context, characterId)
-        
-        Log.d(TAG, "╠══════════════════════════════════════════════════════╣")
-        Log.d(TAG, "║ Today: $today")
-        Log.d(TAG, "║ LastGenerateDate: ${lastGenerateDate ?: "null"}")
-        Log.d(TAG, "║ LastMessageTimestamp: $lastTimestamp")
-        Log.d(TAG, "║ HasExistingMemory: ${savedMemory != null}")
-        
-        if (lastGenerateDate == today) {
-            Log.d(TAG, "╠══════════════════════════════════════════════════════╣")
-            Log.d(TAG, "║ ✓ 今日已生成记忆，直接加载")
-            Log.d(TAG, "╚══════════════════════════════════════════════════════╝")
-            return savedMemory ?: ""
-        }
-        
-        if (allMessages.size < 5) {
-            Log.d(TAG, "╠══════════════════════════════════════════════════════╣")
-            Log.d(TAG, "║ ✗ 消息数量不足 ${allMessages.size}/5，跳过生成")
-            Log.d(TAG, "╚══════════════════════════════════════════════════════╝")
-            return ""
-        }
-        
-        Log.d(TAG, "╠══════════════════════════════════════════════════════╣")
-        Log.d(TAG, "║ → 准备生成记忆...")
-        Log.d(TAG, "╚══════════════════════════════════════════════════════╝")
-        
-        generateAndSaveMemory(context, characterId, allMessages, apiConfig)
-        val result = loadMemory(context, characterId) ?: ""
-        
-        Log.d(TAG, "╔══════════════════════════════════════════════════════╗")
-        Log.d(TAG, "║ ✓ 记忆生成完成")
-        Log.d(TAG, "║ Memory Length: ${result.length} chars")
-        Log.d(TAG, "╚══════════════════════════════════════════════════════╝")
-        
-        return result
-    }
+    ): String = getCachedMemoryForChat(context, characterId)
 
     fun getMemoryFilePath(context: Context, characterId: Long): String {
         return File(context.filesDir, "$MEMORY_DIR/$MEMORY_FILE_PREFIX$characterId$MEMORY_FILE_EXTENSION").absolutePath

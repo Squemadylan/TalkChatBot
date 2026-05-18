@@ -17,14 +17,16 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.example.chatbot.App
 import com.example.chatbot.R
-import com.example.chatbot.data.model.ApiConfig
 import com.example.chatbot.data.repository.ApiConfigRepository
 import com.example.chatbot.databinding.FragmentConfigBinding
 import com.example.chatbot.util.ModelDefaultTokens
 import com.example.chatbot.viewmodel.ApiConfigViewModel
 import com.example.chatbot.viewmodel.ApiConfigViewModelFactory
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 class ConfigFragment : Fragment() {
 
@@ -36,7 +38,7 @@ class ConfigFragment : Fragment() {
     private var apiKeyVisible = false
 
     private val autoSaveHandler = Handler(Looper.getMainLooper())
-    private val autoSaveRunnable = Runnable { persistConfigIfValid() }
+    private val autoSaveRunnable = Runnable { persistConfigAsync() }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -78,6 +80,11 @@ class ConfigFragment : Fragment() {
         setupApiKeyVisibilityToggle()
         setupAutoSave()
         setupAutoMaxTokensFromModel()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel?.loadConfig()
     }
 
     private fun initializeViewModel() {
@@ -125,12 +132,26 @@ class ConfigFragment : Fragment() {
                     binding?.etMaxTokens?.setText(it.maxTokens.toString())
                 }
                 applyApiKeyMasking()
+                updateEffectiveConfigHint(config)
             } catch (e: Exception) {
                 android.util.Log.e(TAG, "Error updating config UI", e)
             } finally {
                 applyingRemoteConfig = false
             }
         }
+    }
+
+    private fun updateEffectiveConfigHint(config: com.example.chatbot.data.model.ApiConfig?) {
+        val tv = binding?.tvEffectiveConfig ?: return
+        if (config == null || config.apiKey.isBlank() || config.model.isBlank()) {
+            tv.text = getString(R.string.config_effective_empty)
+            return
+        }
+        tv.text = getString(
+            R.string.config_effective_hint,
+            config.maxTokens,
+            config.model
+        )
     }
 
     private fun setupRegisterSiliconflowButton() {
@@ -204,59 +225,85 @@ class ConfigFragment : Fragment() {
         autoSaveHandler.postDelayed(autoSaveRunnable, AUTO_SAVE_DELAY_MS)
     }
 
-    private fun persistConfigIfValid() {
+    private fun persistConfigAsync() {
         if (_binding == null || applyingRemoteConfig) return
+        val vm = viewModel ?: return
+        val snapshot = captureFormSnapshot() ?: return
 
-        val app = try {
-            requireActivity().application as? App
-        } catch (e: Exception) {
-            return
-        }
-
-        if (app == null || !app.isDatabaseInitialized()) return
-
-        if (!isInputValidForSave()) return
-
-        try {
-            val modelTrim = binding?.etModel?.text?.toString()?.trim() ?: ""
-            val maxTokens = binding?.etMaxTokens?.text?.toString()?.trim()?.toIntOrNull()
-                ?: ModelDefaultTokens.recommendedMaxOutputTokens(modelTrim)
-
-            val config = ApiConfig(
-                id = 1,
-                baseUrl = binding?.etBaseUrl?.text?.toString()?.trim() ?: "",
-                apiKey = binding?.etApiKey?.text?.toString()?.trim() ?: "",
-                model = modelTrim,
-                temperature = binding?.etTemperature?.text?.toString()?.toDoubleOrNull() ?: 0.7,
-                maxTokens = maxTokens
-            )
-
-            viewModel?.saveConfig(config)
-        } catch (e: Exception) {
-            android.util.Log.e(TAG, "Error auto-saving config", e)
+        lifecycleScope.launch {
+            when (val result = vm.persistFromFields(
+                baseUrl = snapshot.baseUrl,
+                apiKey = snapshot.apiKey,
+                model = snapshot.model,
+                temperature = snapshot.temperature,
+                maxTokensRaw = snapshot.maxTokensRaw
+            )) {
+                is ApiConfigViewModel.PersistResult.Invalid -> {
+                    showValidationError(result.error)
+                }
+                is ApiConfigViewModel.PersistResult.Failed -> {
+                    showToastSafe(getString(R.string.config_save_failed))
+                }
+                is ApiConfigViewModel.PersistResult.Success -> {
+                    updateEffectiveConfigHint(result.config)
+                }
+            }
         }
     }
 
-    private fun isInputValidForSave(): Boolean {
-        if (_binding == null) return false
+    /**
+     * 离开配置页时同步写入数据库，避免用户改完立刻去聊天仍读到旧 max_tokens。
+     */
+    private fun persistConfigBlocking(): ApiConfigViewModel.PersistResult? {
+        if (_binding == null || applyingRemoteConfig) return null
+        val vm = viewModel ?: return null
+        val snapshot = captureFormSnapshot() ?: return null
 
-        val baseUrl = binding?.etBaseUrl?.text?.toString()?.trim() ?: ""
-        val apiKey = binding?.etApiKey?.text?.toString()?.trim() ?: ""
-        val model = binding?.etModel?.text?.toString()?.trim() ?: ""
-        val temperatureText = binding?.etTemperature?.text?.toString() ?: ""
-        val maxTokensText = binding?.etMaxTokens?.text?.toString()?.trim() ?: ""
-
-        if (baseUrl.isEmpty() || apiKey.isEmpty() || model.isEmpty()) return false
-
-        val temperature = temperatureText.toDoubleOrNull() ?: return false
-        if (temperature < 0 || temperature > 2) return false
-
-        if (maxTokensText.isNotEmpty()) {
-            val maxTokens = maxTokensText.toIntOrNull() ?: return false
-            if (maxTokens < 1 || maxTokens > ModelDefaultTokens.MAX_OUTPUT_TOKENS_CAP) return false
+        return runBlocking {
+            vm.persistFromFields(
+                baseUrl = snapshot.baseUrl,
+                apiKey = snapshot.apiKey,
+                model = snapshot.model,
+                temperature = snapshot.temperature,
+                maxTokensRaw = snapshot.maxTokensRaw
+            )
         }
+    }
 
-        return true
+    private data class FormSnapshot(
+        val baseUrl: String,
+        val apiKey: String,
+        val model: String,
+        val temperature: Double,
+        val maxTokensRaw: String
+    )
+
+    private fun captureFormSnapshot(): FormSnapshot? {
+        if (_binding == null) return null
+        val temperature = binding?.etTemperature?.text?.toString()?.trim()?.toDoubleOrNull()
+            ?: return null
+        return FormSnapshot(
+            baseUrl = binding?.etBaseUrl?.text?.toString().orEmpty(),
+            apiKey = binding?.etApiKey?.text?.toString().orEmpty(),
+            model = binding?.etModel?.text?.toString().orEmpty(),
+            temperature = temperature,
+            maxTokensRaw = binding?.etMaxTokens?.text?.toString().orEmpty()
+        )
+    }
+
+    private fun showValidationError(error: ApiConfigViewModel.PersistFieldError) {
+        val message = when (error) {
+            ApiConfigViewModel.PersistFieldError.REQUIRED_FIELDS ->
+                getString(R.string.config_save_required_fields)
+            ApiConfigViewModel.PersistFieldError.INVALID_TEMPERATURE ->
+                getString(R.string.config_save_invalid_temperature)
+            ApiConfigViewModel.PersistFieldError.INVALID_MAX_TOKENS ->
+                getString(
+                    R.string.config_save_invalid_max_tokens,
+                    ModelDefaultTokens.MAX_OUTPUT_TOKENS_CAP
+                )
+        }
+        showToastSafe(message)
     }
 
     private fun setupAutoMaxTokensFromModel() {
@@ -284,6 +331,17 @@ class ConfigFragment : Fragment() {
         } catch (e: Exception) {
             android.util.Log.e(TAG, "Failed to show toast", e)
         }
+    }
+
+    override fun onPause() {
+        autoSaveHandler.removeCallbacks(autoSaveRunnable)
+        when (val result = persistConfigBlocking()) {
+            null -> Unit
+            is ApiConfigViewModel.PersistResult.Invalid -> showValidationError(result.error)
+            is ApiConfigViewModel.PersistResult.Failed -> showToastSafe(getString(R.string.config_save_failed))
+            is ApiConfigViewModel.PersistResult.Success -> updateEffectiveConfigHint(result.config)
+        }
+        super.onPause()
     }
 
     override fun onDestroyView() {

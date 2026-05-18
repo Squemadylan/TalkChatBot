@@ -17,6 +17,25 @@ import io.noties.markwon.Markwon
 
 private const val PAYLOAD_ASSISTANT_TEXT = "payload_assistant_text"
 
+private fun attachMessageLongPress(
+    message: Message,
+    root: View,
+    bubble: View,
+    textView: android.widget.TextView,
+    onMessageLongClick: (Message, View) -> Unit
+) {
+    val listener = View.OnLongClickListener { anchor ->
+        onMessageLongClick(message, anchor)
+        true
+    }
+    root.setOnLongClickListener(listener)
+    bubble.setOnLongClickListener(listener)
+    textView.setOnLongClickListener(listener)
+    textView.isLongClickable = true
+    textView.isClickable = true
+    textView.setTextIsSelectable(false)
+}
+
 class MessageAdapter(
     private val markwon: Markwon,
     /** 当前正在流式输出中的助手消息 id；无则返回 ≤0 */
@@ -153,7 +172,8 @@ class MessageAdapter(
                     items[position],
                     userDisplayName,
                     userPersona,
-                    characterDisplayName
+                    characterDisplayName,
+                    streamingAssistantIdProvider()
                 )
                 return
             }
@@ -175,15 +195,18 @@ class MessageAdapter(
             userPersona: String,
             characterDisplayName: String
         ) {
-            binding.layoutBubble.setOnLongClickListener {
-                onMessageLongClick(message, it)
-                true
-            }
             binding.tvMessage.movementMethod = LinkMovementMethod.getInstance()
             val text = UserPromptPlaceholders.apply(
                 message.content, userDisplayName, userPersona, characterDisplayName
             )
             markwon.setMarkdown(binding.tvMessage, text)
+            attachMessageLongPress(
+                message,
+                binding.root,
+                binding.layoutBubble,
+                binding.tvMessage,
+                onMessageLongClick
+            )
             val margin = binding.root.resources.getDimensionPixelSize(R.dimen.kd_space_300)
             val lp = binding.layoutBubble.layoutParams as ConstraintLayout.LayoutParams
             lp.marginStart = margin
@@ -206,7 +229,8 @@ class MessageAdapter(
             message: Message,
             userDisplayName: String,
             userPersona: String,
-            characterDisplayName: String
+            characterDisplayName: String,
+            streamingAssistantId: Long
         ) {
             val raw = message.content
             binding.progressTyping.visibility = View.GONE
@@ -214,7 +238,20 @@ class MessageAdapter(
             val text = UserPromptPlaceholders.apply(
                 raw, userDisplayName, userPersona, characterDisplayName
             )
-            binding.tvMessage.text = text
+            val streamPlain = message.id == streamingAssistantId && streamingAssistantId > 0L
+            if (streamPlain) {
+                binding.tvMessage.text = text
+            } else {
+                binding.tvMessage.movementMethod = LinkMovementMethod.getInstance()
+                markwon.setMarkdown(binding.tvMessage, text)
+            }
+            attachMessageLongPress(
+                message,
+                binding.root,
+                binding.layoutBubble,
+                binding.tvMessage,
+                onMessageLongClick
+            )
         }
 
         fun bind(
@@ -226,10 +263,6 @@ class MessageAdapter(
             characterDisplayName: String,
             streamingAssistantId: Long
         ) {
-            binding.layoutBubble.setOnLongClickListener {
-                onMessageLongClick(message, it)
-                true
-            }
             val raw = message.content
             val isTyping = raw.isBlank()
             binding.progressTyping.visibility = if (isTyping) View.VISIBLE else View.GONE
@@ -246,8 +279,18 @@ class MessageAdapter(
                 } else {
                     markwon.setMarkdown(binding.tvMessage, text)
                 }
+                attachMessageLongPress(
+                    message,
+                    binding.root,
+                    binding.layoutBubble,
+                    binding.tvMessage,
+                    onMessageLongClick
+                )
             } else {
                 binding.tvMessage.text = ""
+                binding.root.setOnLongClickListener(null)
+                binding.layoutBubble.setOnLongClickListener(null)
+                binding.tvMessage.setOnLongClickListener(null)
             }
             binding.ivAvatar.visibility = if (showAvatars) View.VISIBLE else View.GONE
             if (showAvatars) {

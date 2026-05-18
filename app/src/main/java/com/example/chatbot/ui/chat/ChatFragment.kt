@@ -178,7 +178,7 @@ class ChatFragment : Fragment() {
     }
 
     private fun showMessageLongClickMenu(message: Message, anchor: View) {
-        val popup = PopupMenu(requireContext(), anchor)
+        val popup = PopupMenu(requireContext(), anchor, android.view.Gravity.TOP or android.view.Gravity.START)
         popup.menu.add(0, MENU_COPY_MESSAGE, 0, "复制")
         popup.menu.add(0, MENU_DELETE_MESSAGE, 1, "删除")
         popup.setOnMenuItemClickListener { item ->

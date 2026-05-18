@@ -143,14 +143,23 @@
                 android:id="@+id/etMaxTokens"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/kd_input_height"
-                android:hint="最大输出 Token，留空则按模型名自动推荐"
+                android:hint="最大输出 Token（仅限制单次回复长度；留空保持已保存值）"
                 android:textColor="@color/text_primary"
                 android:textColorHint="@color/text_secondary"
                 android:background="@drawable/bg_input_radius"
                 android:maxLength="500"
                 android:paddingHorizontal="@dimen/kd_space_400"
                 android:textSize="@dimen/kd_font_middle"
+                android:layout_marginBottom="@dimen/kd_space_200"
                 android:inputType="number"/>
+
+            <TextView
+                android:id="@+id/tvEffectiveConfig"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/kd_font_small"
+                android:lineSpacingExtra="2dp"/>
 
         </LinearLayout>
 

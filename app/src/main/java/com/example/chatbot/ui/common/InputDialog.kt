@@ -2,7 +2,6 @@ package com.example.chatbot.ui.common
 
 import android.text.InputFilter
 import android.text.InputType
-import android.text.method.ScrollingMovementMethod
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -63,8 +62,13 @@ fun Fragment.showTextInputPrompt(
             setHorizontallyScrolling(false)
             isVerticalScrollBarEnabled = true
             scrollBarStyle = View.SCROLLBARS_INSIDE_OVERLAY
-            movementMethod = ScrollingMovementMethod.getInstance()
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            // 不用 ScrollingMovementMethod，否则会拦截长按选词/复制
+            movementMethod = null
+            inputType = InputType.TYPE_CLASS_TEXT or
+                InputType.TYPE_TEXT_FLAG_MULTI_LINE or
+                InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            setTextIsSelectable(true)
+            isFocusableInTouchMode = true
         } else {
             minLines = 1
             maxLines = 1

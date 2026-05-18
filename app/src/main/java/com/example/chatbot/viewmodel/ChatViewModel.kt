@@ -4,6 +4,8 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Log
+import android.widget.Toast
+import com.example.chatbot.R
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -12,6 +14,7 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
 import com.example.chatbot.App
+import com.example.chatbot.BuildConfig
 import com.example.chatbot.data.repository.ApiConfigRepository
 import com.example.chatbot.data.repository.CharacterRepository
 import com.example.chatbot.data.repository.MessageRepository
@@ -23,6 +26,7 @@ import com.example.chatbot.data.network.OpenAiChatResponseReader
 import com.example.chatbot.data.network.RetrofitClient
 import com.example.chatbot.ui.chat.MemoryHubRow
 import com.example.chatbot.util.LongTermMemoryManager
+import com.example.chatbot.util.ModelDefaultTokens
 import com.example.chatbot.util.UserPromptPlaceholders
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
@@ -181,11 +185,13 @@ class ChatViewModel(
         val accumulated = StringBuilder()
         var receivedChunk = false
         var assistantRowId = -1L
+        var chatSucceeded = false
+        val appCtx = context?.applicationContext
+        var longTermMemoryEnabled = false
 
         try {
             val apiService = RetrofitClient.create(config.baseUrl, config.apiKey)
 
-            val appCtx = context?.applicationContext
             val prefs = appCtx?.getSharedPreferences(App.PREFS_NAME, Context.MODE_PRIVATE)
             val strength = prefs?.getInt(App.KEY_MEMORY_CONTEXT_COUNT, 5)?.coerceIn(0, 10) ?: 5
 
@@ -194,6 +200,12 @@ class ChatViewModel(
             val userPersona = prefs?.getString(App.KEY_USER_PERSONA, null)?.trim().orEmpty()
             val character = characterRepository.getCharacterById(characterId)
             val charName = character?.name?.trim().orEmpty()
+            longTermMemoryEnabled = character?.enableLongTermMemory == true
+
+            assistantRowId = messageRepository.insertMessage(
+                Message(characterId = characterId, content = "", isUser = false)
+            )
+            activeStreamingAssistantMessageId = assistantRowId
 
             fun plug(src: String) = UserPromptPlaceholders.apply(src, userDisplayName, userPersona, charName)
 
@@ -202,13 +214,8 @@ class ChatViewModel(
                 messages.add(MessageRequest("system", plug(characterPrompt)))
             }
 
-            if (character?.enableLongTermMemory == true && appCtx != null) {
-                val longTermMemory = com.example.chatbot.util.LongTermMemoryManager.getMemoryWithApi(
-                    appCtx,
-                    characterId,
-                    config,
-                    messageRepository.getAllMessagesByCharacterId(characterId)
-                )
+            if (longTermMemoryEnabled && appCtx != null) {
+                val longTermMemory = LongTermMemoryManager.getCachedMemoryForChat(appCtx, characterId)
                 if (longTermMemory.isNotBlank()) {
                     messages.add(MessageRequest("system", "【长期记忆】\n$longTermMemory"))
                 }
@@ -226,19 +233,20 @@ class ChatViewModel(
                 }
             }
 
+            val maxTokens = config.maxTokens.coerceIn(1, ModelDefaultTokens.MAX_OUTPUT_TOKENS_CAP)
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "chat/completions max_tokens=$maxTokens model=${config.model}")
+            }
+
             val request = ChatRequest(
                 model = config.model,
                 messages = messages,
                 temperature = config.temperature,
-                max_tokens = config.maxTokens,
+                maxTokens = maxTokens,
                 stream = true
             )
 
             val base = RetrofitClient.normalizeApiBaseUrl(config.baseUrl)
-            assistantRowId = messageRepository.insertMessage(
-                Message(characterId = characterId, content = "", isUser = false)
-            )
-            activeStreamingAssistantMessageId = assistantRowId
 
             val gson = Gson()
             val streamClient = RetrofitClient.createOkHttpClient(config.apiKey, logBodies = false)
@@ -268,16 +276,21 @@ class ChatViewModel(
                 if (textOut.isBlank()) {
                     messageRepository.deleteMessageById(assistantRowId)
                     clearStreamingAssistantIfMatches(assistantRowId)
-                    if (!persistNonStreamingReply(characterId, request, apiService, base)) {
+                    if (persistNonStreamingReply(characterId, request, apiService, base)) {
+                        chatSucceeded = true
+                    } else {
                         withContext(Dispatchers.Main) {
                             _errorMessage.value = streamResult.exceptionOrNull()?.message
                                 ?: "API返回内容为空"
                         }
                     }
-                } else if (streamResult.isFailure) {
-                    withContext(Dispatchers.Main) {
-                        _errorMessage.value =
-                            "回复可能未完整接收：${streamResult.exceptionOrNull()?.message ?: ""}"
+                } else {
+                    chatSucceeded = true
+                    if (streamResult.isFailure) {
+                        withContext(Dispatchers.Main) {
+                            _errorMessage.value =
+                                "回复可能未完整接收：${streamResult.exceptionOrNull()?.message ?: ""}"
+                        }
                     }
                 }
             } finally {
@@ -323,6 +336,49 @@ class ChatViewModel(
             _isLoading.postValue(false)
             if (sid > 0L) {
                 _assistantMarkdownRefresh.postValue(sid)
+            }
+            if (chatSucceeded && longTermMemoryEnabled && appCtx != null) {
+                scheduleLongTermMemoryRefresh(appCtx, characterId, config)
+            }
+        }
+    }
+
+    /** 对话成功后在后台更新长期记忆，不阻塞本次回复。 */
+    private fun scheduleLongTermMemoryRefresh(
+        appCtx: Context,
+        characterId: Long,
+        config: com.example.chatbot.data.model.ApiConfig
+    ) {
+        val toastCtx = appCtx.applicationContext
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val allMessages = messageRepository.getAllMessagesByCharacterId(characterId)
+                val success = LongTermMemoryManager.refreshMemoryIfNeeded(
+                    appCtx,
+                    characterId,
+                    config,
+                    allMessages,
+                    onGenerationStarted = {
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(
+                                toastCtx,
+                                toastCtx.getString(R.string.long_term_memory_generating),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                )
+                if (success) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            toastCtx,
+                            toastCtx.getString(R.string.long_term_memory_generated),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Long-term memory background refresh failed", e)
             }
         }
     }
@@ -395,6 +451,7 @@ class ChatViewModel(
     }
 
     companion object {
+        private const val TAG = "ChatViewModel"
         private const val NETWORK_CHECK_INTERVAL = 5000L
     }
 }
