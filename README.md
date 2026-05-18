@@ -1,8 +1,10 @@
-# TalkChatBot
+# 独白匣
 
 面向 Android 的大模型角色聊天应用：自建角色、流式对话、本地回忆与备份。支持 OpenAI 兼容的 Chat Completions API（含 SSE 流式）。
 
-- **当前版本**：1.1.0（versionCode 3）
+> 仓库名仍为 [TalkChatBot](https://github.com/Squemadylan/TalkChatBot)；应用显示名与图标已更新为 **独白匣**。
+
+- **当前版本**：1.1.1（versionCode 4）
 - **最低系统**：Android 8.0（API 26）
 - **目标 SDK**：34
 - **仓库**：[github.com/Squemadylan/TalkChatBot](https://github.com/Squemadylan/TalkChatBot)
@@ -16,9 +18,14 @@
 
 ### 2026-05-18
 
+- **品牌**：应用更名为 **独白匣**，更换全新启动图标
 - **长期记忆**：角色可单独开启；由模型将对话摘要为 Markdown 写入本地，发消息时自动注入上下文；备份 ZIP 含记忆文件
 - **对话交互**：长按消息支持复制（含占位符替换）与单条删除
 - **开源许可**：新增 [MIT LICENSE](LICENSE)（含中文译文）
+
+### v1.1.1（2026-05-18）
+
+- 应用名 **独白匣**、新图标；版本号 1.1.1
 
 ### v1.1.0（2026-05）
 

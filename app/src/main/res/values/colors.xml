@@ -44,5 +44,5 @@
     <color name="kd_orange_emphasis">#FB8C00</color>
 
     <!-- 自适应图标底色（与角色图浅蓝背景协调） -->
-    <color name="ic_launcher_background">#DDE8F8</color>
+    <color name="ic_launcher_background">#FAD9E3</color>
 </resources>

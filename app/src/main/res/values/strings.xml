@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ChatBot</string>
+    <string name="app_name">独白匣</string>
 
     <string name="config_api_key_guide_title">还没有 API Key？</string>
     <string name="config_api_key_guide_hint">点击注册即可领取免费 API Key；注册成功后：点击网页右上角「≡」菜单 →「API 密钥」→「新建 API 密钥」，复制密钥并粘贴到「API密钥」栏。</string>

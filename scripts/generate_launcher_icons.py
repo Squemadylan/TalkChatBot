@@ -21,7 +21,7 @@ DENSITY_LAYERS: list[tuple[str, int, int]] = [
 
 DEFAULT_SRC = Path(
     r"C:\Users\Squema-Mini\.cursor\projects\e-Talk-Trae-TalkChatBot\assets"
-    r"\c__Users_Squema-Mini_AppData_Roaming_Cursor_User_workspaceStorage_07951986f3ecdbd9beaacc928e5d078a_images______20260513164851_34_5-e198a71b-d918-44a2-a065-023e4df233aa.png"
+    r"\c__Users_Squema-Mini_AppData_Roaming_Cursor_User_workspaceStorage_07951986f3ecdbd9beaacc928e5d078a_images____APP____-b61d4ed9-1c70-481b-99ba-cfa0de3d115d.png"
 )
 
 
