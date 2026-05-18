@@ -36,4 +36,9 @@ class MessageRepository(private val messageDao: MessageDao) {
         if (limit <= 0) return emptyList()
         return messageDao.getRecentMessagesDesc(characterId, limit).reversed()
     }
+
+    /** 获取该角色的所有对话历史（时间正序） */
+    suspend fun getAllMessagesByCharacterId(characterId: Long): List<Message> {
+        return messageDao.getAllMessagesByCharacterId(characterId)
+    }
 }

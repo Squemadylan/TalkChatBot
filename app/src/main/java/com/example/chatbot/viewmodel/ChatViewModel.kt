@@ -3,6 +3,7 @@ package com.example.chatbot.viewmodel
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -21,6 +22,7 @@ import com.example.chatbot.data.network.MessageRequest
 import com.example.chatbot.data.network.OpenAiChatResponseReader
 import com.example.chatbot.data.network.RetrofitClient
 import com.example.chatbot.ui.chat.MemoryHubRow
+import com.example.chatbot.util.LongTermMemoryManager
 import com.example.chatbot.util.UserPromptPlaceholders
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
@@ -96,17 +98,37 @@ class ChatViewModel(
         }
     }
 
-    fun deleteMessagesForCharacter(characterId: Long) {
+    fun deleteMessagesForCharacter(characterId: Long, context: Context? = null) {
         viewModelScope.launch(Dispatchers.IO) {
             messageRepository.deleteMessagesByCharacterId(characterId)
+            context?.let {
+                try {
+                    LongTermMemoryManager.deleteMemory(it, characterId)
+                } catch (e: Exception) {
+                    Log.e("ChatViewModel", "Failed to delete memory", e)
+                }
+            }
+        }
+    }
+
+    fun deleteMessage(messageId: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            messageRepository.deleteMessageById(messageId)
         }
     }
 
     /** 删除该角色的全部聊天记录与角色本体 */
-    fun deleteCharacterWithMessages(characterId: Long) {
+    fun deleteCharacterWithMessages(characterId: Long, context: Context? = null) {
         viewModelScope.launch(Dispatchers.IO) {
             messageRepository.deleteMessagesByCharacterId(characterId)
             characterRepository.deleteCharacterById(characterId)
+            context?.let {
+                try {
+                    LongTermMemoryManager.deleteMemory(it, characterId)
+                } catch (e: Exception) {
+                    Log.e("ChatViewModel", "Failed to delete memory", e)
+                }
+            }
         }
     }
 
@@ -170,14 +192,28 @@ class ChatViewModel(
             val userDisplayName = prefs?.getString(App.KEY_USER_DISPLAY_NAME, null)?.trim()
                 ?.takeIf { it.isNotEmpty() } ?: "用户"
             val userPersona = prefs?.getString(App.KEY_USER_PERSONA, null)?.trim().orEmpty()
-            val charName = characterRepository.getCharacterById(characterId)?.name?.trim().orEmpty()
-            fun plug(src: String) =
-                UserPromptPlaceholders.apply(src, userDisplayName, userPersona, charName)
+            val character = characterRepository.getCharacterById(characterId)
+            val charName = character?.name?.trim().orEmpty()
+
+            fun plug(src: String) = UserPromptPlaceholders.apply(src, userDisplayName, userPersona, charName)
 
             val messages = mutableListOf<MessageRequest>()
             if (characterPrompt.isNotEmpty()) {
                 messages.add(MessageRequest("system", plug(characterPrompt)))
             }
+
+            if (character?.enableLongTermMemory == true && appCtx != null) {
+                val longTermMemory = com.example.chatbot.util.LongTermMemoryManager.getMemoryWithApi(
+                    appCtx,
+                    characterId,
+                    config,
+                    messageRepository.getAllMessagesByCharacterId(characterId)
+                )
+                if (longTermMemory.isNotBlank()) {
+                    messages.add(MessageRequest("system", "【长期记忆】\n$longTermMemory"))
+                }
+            }
+
             if (strength > 0) {
                 val hist = messageRepository.getRecentMessagesChronological(characterId, strength)
                 for (m in hist) {

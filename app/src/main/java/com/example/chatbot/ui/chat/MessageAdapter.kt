@@ -20,7 +20,9 @@ private const val PAYLOAD_ASSISTANT_TEXT = "payload_assistant_text"
 class MessageAdapter(
     private val markwon: Markwon,
     /** 当前正在流式输出中的助手消息 id；无则返回 ≤0 */
-    private val streamingAssistantIdProvider: () -> Long
+    private val streamingAssistantIdProvider: () -> Long,
+    /** 长按消息时的回调 */
+    private val onMessageLongClick: (Message, View) -> Unit
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private val items = mutableListOf<Message>()
@@ -105,15 +107,23 @@ class MessageAdapter(
                 parent,
                 false
             )
-            UserMessageViewHolder(binding, markwon)
+            UserMessageViewHolder(binding, markwon, onMessageLongClick)
         } else {
             val binding = ItemMessageLeftBinding.inflate(
                 LayoutInflater.from(parent.context),
                 parent,
                 false
             )
-            AssistantMessageViewHolder(binding, markwon)
+            AssistantMessageViewHolder(binding, markwon, onMessageLongClick)
         }
+    }
+
+    init {
+        setHasStableIds(true)
+    }
+
+    override fun getItemId(position: Int): Long {
+        return items[position].id
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
@@ -153,7 +163,8 @@ class MessageAdapter(
 
     class UserMessageViewHolder(
         private val binding: ItemMessageRightBinding,
-        private val markwon: Markwon
+        private val markwon: Markwon,
+        private val onMessageLongClick: (Message, View) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(
@@ -164,6 +175,10 @@ class MessageAdapter(
             userPersona: String,
             characterDisplayName: String
         ) {
+            binding.layoutBubble.setOnLongClickListener {
+                onMessageLongClick(message, it)
+                true
+            }
             binding.tvMessage.movementMethod = LinkMovementMethod.getInstance()
             val text = UserPromptPlaceholders.apply(
                 message.content, userDisplayName, userPersona, characterDisplayName
@@ -183,7 +198,8 @@ class MessageAdapter(
 
     class AssistantMessageViewHolder(
         private val binding: ItemMessageLeftBinding,
-        private val markwon: Markwon
+        private val markwon: Markwon,
+        private val onMessageLongClick: (Message, View) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bindAssistantTextOnly(
@@ -210,6 +226,10 @@ class MessageAdapter(
             characterDisplayName: String,
             streamingAssistantId: Long
         ) {
+            binding.layoutBubble.setOnLongClickListener {
+                onMessageLongClick(message, it)
+                true
+            }
             val raw = message.content
             val isTyping = raw.isBlank()
             binding.progressTyping.visibility = if (isTyping) View.VISIBLE else View.GONE

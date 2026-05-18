@@ -12,6 +12,7 @@ data class Character(
     val prompt: String,
     val tags: String,
     val openingGreeting: String = "",
+    val enableLongTermMemory: Boolean = false,
     val createdAt: Long = System.currentTimeMillis()
 ) {
     fun systemPromptForChat(): String = buildString {

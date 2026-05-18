@@ -43,4 +43,7 @@ interface MessageDao {
 
     @Query("SELECT COUNT(*) FROM messages WHERE characterId = :characterId")
     suspend fun getMessageCount(characterId: Long): Int
+
+    @Query("SELECT * FROM messages WHERE characterId = :characterId ORDER BY timestamp ASC")
+    suspend fun getAllMessagesByCharacterId(characterId: Long): List<Message>
 }

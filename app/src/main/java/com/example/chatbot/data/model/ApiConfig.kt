@@ -6,9 +6,9 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "api_config")
 data class ApiConfig(
     @PrimaryKey val id: Int = 1,
-    val baseUrl: String = "",
+    val baseUrl: String = "https://api.siliconflow.cn/v1",
     val apiKey: String = "",
-    val model: String = "gpt-3.5-turbo",
+    val model: String = "deepseek-ai/DeepSeek-V3.2",
     val temperature: Double = 0.7,
-    val maxTokens: Int = 4096
+    val maxTokens: Int = 8192
 )

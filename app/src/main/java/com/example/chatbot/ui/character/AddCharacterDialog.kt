@@ -33,6 +33,7 @@ class AddCharacterDialog(
     private var tags: String = ""
     private var description: String = ""
     private var openingGreeting: String = ""
+    private var enableLongTermMemory: Boolean = false
 
     private val pickAvatar = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -76,8 +77,11 @@ class AddCharacterDialog(
             tags = c.tags
             description = c.description
             openingGreeting = c.openingGreeting
+            enableLongTermMemory = c.enableLongTermMemory
             draftAvatarPath = c.avatar.takeIf { it.isNotBlank() }
         }
+        
+        binding.switchLongTermMemory.isChecked = enableLongTermMemory
 
         binding.rowAlternate.root.visibility = View.GONE
         binding.rowExamples.root.visibility = View.GONE
@@ -133,6 +137,7 @@ class AddCharacterDialog(
         }
 
         binding.btnSave.setOnClickListener {
+            enableLongTermMemory = binding.switchLongTermMemory.isChecked
             val name = binding.etName.text.toString().trim().ifEmpty { "新角色" }
             val avatarFinal = draftAvatarPath?.takeIf { it.isNotBlank() }
                 ?: existingCharacter?.avatar?.takeIf { it.isNotBlank() }.orEmpty()
@@ -142,7 +147,8 @@ class AddCharacterDialog(
                 description = description.trim(),
                 prompt = existingCharacter?.prompt?.trim().orEmpty(),
                 tags = tags.trim(),
-                openingGreeting = openingGreeting.trim()
+                openingGreeting = openingGreeting.trim(),
+                enableLongTermMemory = enableLongTermMemory
             )
             val result = existingCharacter?.let {
                 base.copy(id = it.id, createdAt = it.createdAt)

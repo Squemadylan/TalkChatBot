@@ -1,0 +1,18 @@
+allprojects {
+    afterEvaluate { project ->
+        if (project.hasProperty("android")) {
+            project.android {
+                // 禁用分析服务
+                tasks.whenTaskAdded { task ->
+                    if (task.name.contains("Analytics") || task.name.contains("Profile")) {
+                        task.enabled = false
+                    }
+                }
+            }
+        }
+    }
+}
+
+// 禁用 Gradle 分析
+System.setProperty("android.enableProfileJson", "false")
+System.setProperty("android.builder.sdkDownload", "false")

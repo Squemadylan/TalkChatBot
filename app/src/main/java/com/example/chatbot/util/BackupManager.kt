@@ -31,6 +31,7 @@ object BackupManager {
     private const val BACKUP_FILE_EXTENSION = ".zip"
     private const val CHARACTERS_JSON = "characters.json"
     private const val AVATARS_DIR = "avatars"
+    private const val MEMORIES_DIR = "memories"
     /** zip 内用户头像固定文件名，避免与角色 `user_avatar.jpg` 等重名冲突 */
     private const val USER_AVATAR_ZIP_NAME = "user_profile_avatar"
 
@@ -171,6 +172,18 @@ object BackupManager {
                     zipOut.closeEntry()
                 }
             }
+            
+            if (character.enableLongTermMemory) {
+                val memoryFile = File(
+                    context.filesDir,
+                    "long_term_memory/memory_${character.id}.md"
+                )
+                if (memoryFile.exists()) {
+                    zipOut.putNextEntry(ZipEntry("$MEMORIES_DIR/memory_${character.id}.md"))
+                    FileInputStream(memoryFile).use { it.copyTo(zipOut) }
+                    zipOut.closeEntry()
+                }
+            }
         }
 
         if (userBackup.avatarFileName != null) {
@@ -287,8 +300,9 @@ object BackupManager {
             var characterCount = 0
             var userProfileRestored = false
             val avatarDir = File(context.filesDir, "restored_avatars").apply { mkdirs() }
+            val memoryDir = File(context.filesDir, "long_term_memory").apply { mkdirs() }
 
-            // 先解压 zip 内 avatars/ 下全部文件（备份里含 .img、.jpg 等；原先只处理 .img 且未写回 DB）
+            // 先解压 zip 内 avatars/ 和 memories/ 下全部文件
             ZipInputStream(FileInputStream(backupFile)).use { zipIn ->
                 var entry = zipIn.nextEntry
                 while (entry != null) {
@@ -296,6 +310,13 @@ object BackupManager {
                         val simpleName = File(entry.name).name
                         if (simpleName.isNotBlank()) {
                             FileOutputStream(File(avatarDir, simpleName)).use { out ->
+                                zipIn.copyTo(out)
+                            }
+                        }
+                    } else if (!entry.isDirectory && entry.name.startsWith("$MEMORIES_DIR/")) {
+                        val simpleName = File(entry.name).name
+                        if (simpleName.isNotBlank() && simpleName.endsWith(".md")) {
+                            FileOutputStream(File(memoryDir, simpleName)).use { out ->
                                 zipIn.copyTo(out)
                             }
                         }

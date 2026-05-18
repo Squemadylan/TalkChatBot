@@ -46,7 +46,7 @@ class App : Application(), Thread.UncaughtExceptionHandler {
                 AppDatabase::class.java,
                 DATABASE_NAME
             )
-                .fallbackToDestructiveMigration()
+                .addMigrations(AppDatabase.MIGRATION_2_3)
                 .build()
             isInitializing = false
             Log.d(TAG, "Database initialized successfully")

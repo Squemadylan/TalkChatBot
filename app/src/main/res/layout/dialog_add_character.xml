@@ -124,6 +124,54 @@
                 android:id="@+id/rowOpening"
                 layout="@layout/view_character_setting_row" />
 
+            <LinearLayout
+                android:id="@+id/rowLongTermMemory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:minHeight="@dimen/kd_touch_min"
+                android:padding="@dimen/kd_space_400"
+                android:background="@drawable/bg_input_radius"
+                android:layout_marginBottom="@dimen/kd_space_300"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="@dimen/kd_icon_large"
+                    android:layout_height="@dimen/kd_icon_large"
+                    android:src="@drawable/ic_memory"
+                    android:tint="@color/pink_primary"
+                    android:layout_marginEnd="@dimen/kd_space_300"/>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="永久记忆"
+                        android:textColor="@color/text_primary"
+                        android:textSize="@dimen/kd_font_base"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="开启后自动压缩对话历史生成摘要"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="@dimen/kd_font_small"/>
+
+                </LinearLayout>
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchLongTermMemory"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/kd_space_200"/>
+
+            </LinearLayout>
+
             <include
                 android:id="@+id/rowAlternate"
                 layout="@layout/view_character_setting_row" />

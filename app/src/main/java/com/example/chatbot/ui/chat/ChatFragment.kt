@@ -17,11 +17,13 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.chatbot.App
 import com.example.chatbot.R
 import com.example.chatbot.data.repository.ApiConfigRepository
+import com.example.chatbot.data.model.Message
 import com.example.chatbot.data.repository.CharacterRepository
 import com.example.chatbot.data.repository.MessageRepository
 import com.example.chatbot.databinding.FragmentChatBinding
 import com.example.chatbot.ui.common.ConfirmDialog
 import com.example.chatbot.util.AvatarStorage
+import com.example.chatbot.util.UserPromptPlaceholders
 import com.example.chatbot.viewmodel.ChatViewModel
 import com.example.chatbot.viewmodel.ChatViewModelFactory
 import io.noties.markwon.Markwon
@@ -48,6 +50,8 @@ class ChatFragment : Fragment() {
     private var characterDisplayName: String = ""
     private var characterOpeningGreeting: String = ""
     private var hasSentGreeting: Boolean = false
+    private var userDisplayName: String = "用户"
+    private var userPersona: String = ""
 
     private var hubRowsCache: List<MemoryHubRow> = emptyList()
     private var searchQuery: String = ""
@@ -159,15 +163,58 @@ class ChatFragment : Fragment() {
             binding?.recyclerView?.adapter = memoryAdapter
         } else {
             if (messageAdapter == null) {
-                messageAdapter = MessageAdapter(markwon!!) {
-                    viewModel?.streamingAssistantMessageIdForUi() ?: -1L
-                }
+                messageAdapter = MessageAdapter(
+                    markwon!!,
+                    { viewModel?.streamingAssistantMessageIdForUi() ?: -1L },
+                    { message, anchor -> showMessageLongClickMenu(message, anchor) }
+                )
             }
             binding?.recyclerView?.layoutManager = LinearLayoutManager(requireContext())
             binding?.recyclerView?.itemAnimator = null
+            binding?.recyclerView?.setHasFixedSize(true)
             binding?.recyclerView?.adapter = messageAdapter
             applyMessageAdapterDisplay()
         }
+    }
+
+    private fun showMessageLongClickMenu(message: Message, anchor: View) {
+        val popup = PopupMenu(requireContext(), anchor)
+        popup.menu.add(0, MENU_COPY_MESSAGE, 0, "复制")
+        popup.menu.add(0, MENU_DELETE_MESSAGE, 1, "删除")
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                MENU_COPY_MESSAGE -> {
+                    val text = UserPromptPlaceholders.apply(
+                        message.content,
+                        userDisplayName,
+                        userPersona,
+                        characterDisplayName
+                    )
+                    val clipboard = requireContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    val clip = android.content.ClipData.newPlainText("消息内容", text)
+                    clipboard.setPrimaryClip(clip)
+                    showToast("已复制到剪贴板")
+                    true
+                }
+                MENU_DELETE_MESSAGE -> {
+                    anchor.post {
+                        if (!isAdded) return@post
+                        ConfirmDialog(
+                            title = "删除消息",
+                            message = "确定删除这条消息？",
+                            positiveText = "删除",
+                            onConfirm = {
+                                viewModel?.deleteMessage(message.id)
+                                showToast("已删除")
+                            }
+                        ).show(childFragmentManager, "DeleteMessage_${message.id}")
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
+        popup.show()
     }
 
     private fun initializeViewModel() {
@@ -277,18 +324,18 @@ class ChatFragment : Fragment() {
 
     private fun applyUserPlaceholdersToMessageAdapter() {
         if (_binding == null || characterId == 0L || !isAdded) return
-        val name = prefs().getString(App.KEY_USER_DISPLAY_NAME, null)?.trim()?.takeIf { it.isNotEmpty() }
+        userDisplayName = prefs().getString(App.KEY_USER_DISPLAY_NAME, null)?.trim()?.takeIf { it.isNotEmpty() }
             ?: "用户"
-        val persona = prefs().getString(App.KEY_USER_PERSONA, null)?.trim().orEmpty()
-        messageAdapter?.updateUserPlaceholders(name, persona, characterDisplayName)
+        userPersona = prefs().getString(App.KEY_USER_PERSONA, null)?.trim().orEmpty()
+        messageAdapter?.updateUserPlaceholders(userDisplayName, userPersona, characterDisplayName)
     }
 
     private fun applyUserPlaceholdersToMemoryAdapter() {
         if (_binding == null || characterId != 0L || !isAdded) return
-        val name = prefs().getString(App.KEY_USER_DISPLAY_NAME, null)?.trim()?.takeIf { it.isNotEmpty() }
+        userDisplayName = prefs().getString(App.KEY_USER_DISPLAY_NAME, null)?.trim()?.takeIf { it.isNotEmpty() }
             ?: "用户"
-        val persona = prefs().getString(App.KEY_USER_PERSONA, null)?.trim().orEmpty()
-        memoryAdapter?.updateUserPlaceholders(name, persona)
+        userPersona = prefs().getString(App.KEY_USER_PERSONA, null)?.trim().orEmpty()
+        memoryAdapter?.updateUserPlaceholders(userDisplayName, userPersona)
     }
 
     private fun setupSendButton() {
@@ -335,21 +382,23 @@ class ChatFragment : Fragment() {
                 ConfirmDialog(
                     title = "清空对话记录",
                     message = "确定删除与该角色的全部聊天记录？（角色保留）",
-                    positiveText = "清空"
-                ) {
-                    viewModel?.deleteMessagesForCharacter(characterId)
-                    showToast("已清空对话记录")
-                }.show(childFragmentManager, "ClearChatDialog_$characterId")
+                    positiveText = "清空",
+                    onConfirm = {
+                        viewModel?.deleteMessagesForCharacter(characterId)
+                        showToast("已清空对话记录")
+                    }
+                ).show(childFragmentManager, "ClearChatDialog_$characterId")
                 return@setOnClickListener
             }
             ConfirmDialog(
                 title = "清空所有回忆",
                 message = "将删除所有角色下的全部聊天记录，且不可恢复。确定继续？",
-                positiveText = "清空"
-            ) {
-                viewModel?.deleteAllMessages()
-                showToast("已清空全部回忆")
-            }.show(childFragmentManager, "ClearAllChatDialog")
+                positiveText = "清空",
+                onConfirm = {
+                    viewModel?.deleteAllMessages()
+                    showToast("已清空全部回忆")
+                }
+            ).show(childFragmentManager, "ClearAllChatDialog")
         }
     }
 
@@ -482,5 +531,7 @@ class ChatFragment : Fragment() {
         const val ARG_CHARACTER_ID = "characterId"
         private const val MENU_CLEAR_CHARACTER = 1
         private const val MENU_DELETE_CHARACTER = 2
+        private const val MENU_COPY_MESSAGE = 3
+        private const val MENU_DELETE_MESSAGE = 4
     }
 }
