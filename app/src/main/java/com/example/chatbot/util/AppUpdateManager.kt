@@ -9,7 +9,9 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.util.Log
+import android.view.KeyEvent
 import android.widget.Toast
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.fragment.app.FragmentActivity
@@ -18,7 +20,6 @@ import com.example.chatbot.App
 import com.example.chatbot.BuildConfig
 import com.example.chatbot.R
 import com.example.chatbot.data.model.UpdateManifest
-import com.example.chatbot.ui.common.UpdateDialogFragment
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -34,7 +35,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 object AppUpdateManager {
 
     private const val TAG = "AppUpdateManager"
-    private const val DIALOG_TAG = UpdateDialogFragment.TAG
     private const val PREFS_KEY_LAST_OPTIONAL_CHECK_MS = "last_optional_update_check_ms"
     private const val OPTIONAL_CHECK_INTERVAL_MS = 24L * 60 * 60 * 1000
 
@@ -55,7 +55,7 @@ object AppUpdateManager {
         .build()
 
     private val isDownloading = AtomicBoolean(false)
-    private var resultListenerRegistered = false
+    private val isUpdateDialogVisible = AtomicBoolean(false)
 
     sealed class UpdateStatus {
         data object UpToDate : UpdateStatus()
@@ -200,7 +200,7 @@ object AppUpdateManager {
 
     /** 启动时检查：强制更新立即提示；可选更新 24 小时内只查一次 */
     fun runStartupCheck(activity: AppCompatActivity) {
-        if (activity.supportFragmentManager.findFragmentByTag(DIALOG_TAG) != null) return
+        if (isUpdateDialogVisible.get()) return
         activity.lifecycleScope.launch {
             val localCode = localVersionCode(activity)
             val manifestResult = fetchManifest(activity)
@@ -228,7 +228,7 @@ object AppUpdateManager {
 
     /** 设置页手动检查：始终请求网络并给出明确结果 */
     fun runManualCheck(activity: FragmentActivity) {
-        if (activity.supportFragmentManager.findFragmentByTag(DIALOG_TAG) != null) {
+        if (isUpdateDialogVisible.get()) {
             toast(activity, activity.getString(R.string.update_check_in_progress))
             return
         }
@@ -270,7 +270,7 @@ object AppUpdateManager {
         manifest: UpdateManifest,
         force: Boolean
     ) {
-        if (activity.supportFragmentManager.findFragmentByTag(DIALOG_TAG) != null) return
+        if (!isUpdateDialogVisible.compareAndSet(false, true)) return
 
         val title = if (force) {
             activity.getString(R.string.update_force_title)
@@ -291,43 +291,39 @@ object AppUpdateManager {
             }
         }
 
-        ensureResultListener(activity)
-
-        val negativeText = if (force) {
-            activity.getString(R.string.update_action_manual_pan)
-        } else {
-            activity.getString(R.string.update_action_later)
-        }
-
-        UpdateDialogFragment.newInstance(
-            title = title,
-            message = message,
-            forceUpdate = force,
-            positiveText = activity.getString(R.string.update_action_download),
-            negativeText = negativeText,
-            manifestJson = gson.toJson(manifest),
-            manualUpdateUrl = resolveManualUpdateUrl(activity, manifest)
-        ).showNow(activity.supportFragmentManager, DIALOG_TAG)
-    }
-
-    private fun ensureResultListener(activity: FragmentActivity) {
-        if (resultListenerRegistered) return
-        resultListenerRegistered = true
-        activity.supportFragmentManager.setFragmentResultListener(
-            UpdateDialogFragment.REQUEST_KEY,
-            activity
-        ) { _, bundle ->
-            if (bundle.getString(UpdateDialogFragment.RESULT_ACTION) != UpdateDialogFragment.ACTION_UPDATE) {
-                return@setFragmentResultListener
+        activity.window.decorView.post {
+            if (activity.isFinishing || activity.isDestroyed) {
+                isUpdateDialogVisible.set(false)
+                return@post
             }
-            val json = bundle.getString(UpdateDialogFragment.ARG_MANIFEST_JSON).orEmpty()
-            if (json.isBlank()) return@setFragmentResultListener
-            val manifest = runCatching {
-                gson.fromJson(json, UpdateManifest::class.java)
-            }.getOrNull() ?: return@setFragmentResultListener
-            activity.lifecycleScope.launch {
-                downloadAndInstall(activity, manifest)
+            val builder = MaterialAlertDialogBuilder(activity)
+                .setTitle(title)
+                .setMessage(message)
+                .setCancelable(!force)
+                .setPositiveButton(activity.getString(R.string.update_action_download)) { _, _ ->
+                    isUpdateDialogVisible.set(false)
+                    activity.lifecycleScope.launch {
+                        downloadAndInstall(activity, manifest)
+                    }
+                }
+            if (force) {
+                builder.setNegativeButton(activity.getString(R.string.update_action_manual_pan)) { _, _ ->
+                    openManualUpdatePage(activity, manifest)
+                }
+            } else {
+                builder.setNegativeButton(activity.getString(R.string.update_action_later)) { _, _ ->
+                    isUpdateDialogVisible.set(false)
+                }
             }
+            val dialog = builder.create()
+            dialog.setCanceledOnTouchOutside(false)
+            if (force) {
+                dialog.setOnKeyListener { _, keyCode, event ->
+                    keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP
+                }
+            }
+            dialog.setOnDismissListener { isUpdateDialogVisible.set(false) }
+            dialog.show()
         }
     }
 
