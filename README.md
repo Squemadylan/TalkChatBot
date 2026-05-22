@@ -145,6 +145,53 @@ Debug APK 路径：`app/build/outputs/apk/debug/app-debug.apk`
 
 ---
 
+## 更新策略说明
+
+应用内更新由仓库根目录 **`app/update.json`** 驱动（`main` 分支）。客户端启动或设置页「检查更新」时拉取该文件，与**本机安装的 `versionCode`**（见 `app/build.gradle`）比较。
+
+### 判定规则
+
+| 条件 | 类型 | 用户体验 |
+|------|------|----------|
+| 本地 `versionCode` **<** `minVersionCode` | **强制更新** | 启动即弹窗；不可返回/点外部关闭；无「稍后再说」 |
+| 本地 **≥** `minVersionCode` 且 **<** `versionCode` | **可选更新** | 可「稍后再说」；启动检查 24 小时内最多提示一次 |
+| 本地 **≥** `versionCode` | 已最新 | 手动检查提示「当前已是最新版本」 |
+
+须满足 **`minVersionCode` ≤ `versionCode`**。
+
+### `update.json` 字段
+
+| 字段 | 说明 |
+|------|------|
+| **`versionCode`** | 线上最新版整数；发新 APK 时递增 |
+| **`minVersionCode`** | 最低可运行版本；低于此值强制更新 |
+| `versionName` | 展示用版本名（弹窗不显示，可给发版备注） |
+| `apkUrl` | 安装包 HTTPS 直链 |
+| `changelog` | 更新说明（远程配置用；弹窗正文以应用内文案为主） |
+| `sha256` | 可选；APK 的 SHA-256（小写十六进制），用于下载后校验 |
+| `manualUpdateUrl` | 可选；网盘等手动下载页（设置页「网盘手动更新」及强更弹窗） |
+
+拉取顺序：GitHub Raw → jsDelivr 镜像 → 内置 `app/src/main/assets/update_manifest_fallback.json`（兜底，发版时请与线上一致）。
+
+### 发版对照清单
+
+1. 在 `app/build.gradle` 中设置新版本 `versionCode` / `versionName`，打包并上传 APK（Release 或网盘）。
+2. 编辑 **`app/update.json`** 并 push 到 **`main`**：
+   - `versionCode` = 新包 versionCode
+   - `minVersionCode` = 仍允许运行的最低版（**仅在不兼容旧版时提高到新包 versionCode**）
+   - `apkUrl` = 新包下载地址
+3. 同步修改 **`update_manifest_fallback.json`**（与 `update.json` 保持一致）。
+4. 验证：用**低于 `versionCode` 的旧包**安装，冷启动或设置里检查更新。
+
+### 示例（当前线上配置思路）
+
+- `versionCode: 5`、`minVersionCode: 4`：已装 **v4** 的用户为**可选更新**；**v3 及以下**为**强制更新**。
+- 若发布 **v6** 且必须淘汰 v5：`versionCode: 6`、`minVersionCode: 6`。
+
+国内访问 GitHub 不稳定时，可在设置中使用「网盘手动更新」（`manualUpdateUrl`）。
+
+---
+
 ## 技术栈
 
 | 类别 | 技术 |
@@ -173,7 +220,8 @@ Debug APK 路径：`app/build/outputs/apk/debug/app-debug.apk`
 - [ ] 多套 API 配置切换
 - [ ] API 连接一键检测
 - [ ] 设置项：气泡样式、语音、回复策略、配图、状态栏等（当前为占位）
-- [ ] 应用内检查更新、官网与社群链接
+- [x] 应用内检查更新（`app/update.json`，含强制/可选与网盘手动更新）
+- [ ] 官网与社群链接
 - [ ] 背景音乐播放
 
 ---
