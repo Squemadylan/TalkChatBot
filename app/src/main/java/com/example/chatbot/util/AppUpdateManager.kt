@@ -157,23 +157,44 @@ object AppUpdateManager {
 
     private fun manifestUrls(): List<String> = listOfNotNull(
         BuildConfig.UPDATE_MANIFEST_URL.trim().takeIf { it.isNotEmpty() },
-        BuildConfig.UPDATE_MANIFEST_URL_MIRROR.trim().takeIf { it.isNotEmpty() }
+        BuildConfig.UPDATE_MANIFEST_URL_MIRROR.trim().takeIf { it.isNotEmpty() },
+        // 旧安装包 BuildConfig 可能仍指向历史 commit；始终再试 main，取 versionCode 最高的一份
+        "https://raw.githubusercontent.com/Squemadylan/TalkChatBot/main/app/update.json",
+        "https://cdn.jsdelivr.net/gh/Squemadylan/TalkChatBot@main/app/update.json"
     ).distinct()
 
-    suspend fun fetchManifest(context: Context): Result<UpdateManifest> = withContext(Dispatchers.IO) {
+    /**
+     * @param allowEmbeddedFallback 手动检查应为 false，避免内置旧配置掩盖线上新版本
+     */
+    suspend fun fetchManifest(
+        context: Context,
+        allowEmbeddedFallback: Boolean = true
+    ): Result<UpdateManifest> = withContext(Dispatchers.IO) {
         var lastError: Throwable? = null
+        val loaded = mutableListOf<Pair<String, UpdateManifest>>()
         for (url in manifestUrls()) {
             val result = fetchManifestFromUrl(url)
             if (result.isSuccess) {
-                Log.d(TAG, "Loaded update manifest from $url")
-                return@withContext result
+                val manifest = result.getOrThrow()
+                loaded.add(url to manifest)
+                Log.d(TAG, "Loaded update manifest from $url (versionCode=${manifest.versionCode})")
+            } else {
+                lastError = result.exceptionOrNull()
+                Log.w(TAG, "Failed to load manifest from $url", lastError)
             }
-            lastError = result.exceptionOrNull()
-            Log.w(TAG, "Failed to load manifest from $url", lastError)
         }
-        loadEmbeddedFallbackManifest(context)?.let { manifest ->
-            Log.i(TAG, "Using embedded fallback update manifest (minVersionCode=${manifest.minVersionCode})")
-            return@withContext Result.success(manifest)
+        if (loaded.isNotEmpty()) {
+            val best = loaded.maxBy { it.second.versionCode }
+            if (loaded.size > 1) {
+                Log.i(TAG, "Using newest manifest from ${best.first} among ${loaded.size} sources")
+            }
+            return@withContext Result.success(best.second)
+        }
+        if (allowEmbeddedFallback) {
+            loadEmbeddedFallbackManifest(context)?.let { manifest ->
+                Log.i(TAG, "Using embedded fallback update manifest (versionCode=${manifest.versionCode})")
+                return@withContext Result.success(manifest)
+            }
         }
         Result.failure(lastError ?: IllegalStateException("无法获取更新配置"))
     }
@@ -260,7 +281,7 @@ object AppUpdateManager {
         activity.lifecycleScope.launch {
             toast(activity, activity.getString(R.string.update_checking))
             val localCode = localVersionCode(activity)
-            val manifestResult = fetchManifest(activity)
+            val manifestResult = fetchManifest(activity, allowEmbeddedFallback = false)
             manifestResult.onFailure { e ->
                 Log.w(TAG, "Manual update check failed", e)
                 toast(activity, activity.getString(R.string.update_check_failed, e.message ?: "未知错误"))

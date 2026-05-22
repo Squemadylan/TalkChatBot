@@ -188,7 +188,7 @@ Debug APK 路径：`app/build/outputs/apk/debug/app-debug.apk`
 - **`versionCode` 必须与已发布的最新 APK 一致**。当前最新为 **1.2.0（versionCode 6）** 时，应设 `versionCode: 6`；已装 v6 的用户**不会**再收到更新提示。
 - 当前线上策略示例：`versionCode: 6`、`minVersionCode: 5`（v5 可选更新，v4 及以下强制更新）。
 
-> **注意**：jsDelivr 镜像有缓存。发版后若手机仍读到旧配置，请将 `app/build.gradle` 中 `UPDATE_MANIFEST_URL_MIRROR` 的 `@main` 改为**本次提交的 commit SHA**（见 [jsDelivr GitHub 文档](https://www.jsdelivr.com/documentation#id2534427)），或等待缓存刷新。
+> **注意**：jsDelivr 的 `@main` 有缓存延迟。客户端会同时请求 Raw / 镜像 / `main` 多个地址，并采用 **`versionCode` 最大** 的一份，避免旧安装包内嵌的历史 commit 镜像盖住新配置。发版后仍可将 `UPDATE_MANIFEST_URL_MIRROR` 改为当次 commit SHA 以加快生效。
 
 国内访问 GitHub 不稳定时，可在设置中使用「网盘手动更新」（`manualUpdateUrl`）。
 
