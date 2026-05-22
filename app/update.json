@@ -1,6 +1,6 @@
 {
-  "versionCode": 5,
-  "versionName": "1.2.0",
+  "versionCode": 4,
+  "versionName": "1.1.1",
   "minVersionCode": 4,
   "apkUrl": "https://github.com/Squemadylan/TalkChatBot/releases/download/v1.1.1/app-debug.apk",
   "changelog": "修复与体验优化，建议更新。",

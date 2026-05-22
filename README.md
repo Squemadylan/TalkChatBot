@@ -185,8 +185,10 @@ Debug APK 路径：`app/build/outputs/apk/debug/app-debug.apk`
 
 ### 示例（当前线上配置思路）
 
-- `versionCode: 5`、`minVersionCode: 4`：已装 **v4** 的用户为**可选更新**；**v3 及以下**为**强制更新**。
-- 若发布 **v6** 且必须淘汰 v5：`versionCode: 6`、`minVersionCode: 6`。
+- **`versionCode` 必须与已发布的最新 APK 一致**。当前最新为 **1.1.1（versionCode 4）** 时，应设 `versionCode: 4`、`minVersionCode: 4`，已装 v4 的用户**不会**再收到更新提示。
+- 发布 **v5** 后：改为 `versionCode: 5`；若仍兼容 v4，保持 `minVersionCode: 4`（v4 可选更新）；若不兼容，设 `minVersionCode: 5`（v4 强制更新）。
+
+> **注意**：jsDelivr 镜像有缓存。发版后若手机仍读到旧配置，请将 `app/build.gradle` 中 `UPDATE_MANIFEST_URL_MIRROR` 的 `@main` 改为**本次提交的 commit SHA**（见 [jsDelivr GitHub 文档](https://www.jsdelivr.com/documentation#id2534427)），或等待缓存刷新。
 
 国内访问 GitHub 不稳定时，可在设置中使用「网盘手动更新」（`manualUpdateUrl`）。
 
