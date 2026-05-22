@@ -23,8 +23,10 @@ import com.example.chatbot.databinding.FragmentSettingBinding
 import com.example.chatbot.ui.common.ConfirmDialog
 import com.example.chatbot.ui.common.DEFAULT_INPUT_MAX_LENGTH
 import com.example.chatbot.ui.common.showTextInputPrompt
+import com.example.chatbot.util.AppUpdateManager
 import com.example.chatbot.util.AvatarStorage
 import com.example.chatbot.util.BackupManager
+import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -235,7 +237,12 @@ class SettingFragment : Fragment() {
         }
 
         binding?.llCheckUpdate?.setOnClickListener {
-            showToast("检查更新中...")
+            val activity = activity as? AppCompatActivity ?: return@setOnClickListener
+            AppUpdateManager.runManualCheck(activity)
+        }
+
+        binding?.llManualUpdate?.setOnClickListener {
+            AppUpdateManager.openManualUpdatePage(requireContext())
         }
     }
 

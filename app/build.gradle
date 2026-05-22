@@ -16,6 +16,10 @@ android {
         versionCode 4
         versionName "1.1.1"
 
+        // 与仓库 app/update.json 对应（main 分支 Raw 地址）
+        buildConfigField "String", "UPDATE_MANIFEST_URL",
+                "\"https://raw.githubusercontent.com/Squemadylan/TalkChatBot/main/app/update.json\""
+
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         vectorDrawables {

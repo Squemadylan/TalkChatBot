@@ -38,6 +38,7 @@
 
 # Keep data classes
 -keep class com.example.chatbot.data.model.** { *; }
+-keep class com.example.chatbot.data.model.UpdateManifest { *; }
 -keep class com.example.chatbot.data.network.** { *; }
 
 # Room

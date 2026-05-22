@@ -8,6 +8,7 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.example.chatbot.R
 import com.example.chatbot.ui.chat.ChatFragment
+import com.example.chatbot.util.AppUpdateManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
@@ -18,6 +19,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         initializeNavigation()
+        AppUpdateManager.runStartupCheck(this)
     }
 
     private fun initializeNavigation() {
