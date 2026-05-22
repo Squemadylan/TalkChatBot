@@ -8,7 +8,9 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Base64
 import com.example.chatbot.App
+import com.example.chatbot.data.model.ApiConfig
 import com.example.chatbot.data.model.Character
+import com.example.chatbot.database.ApiConfigDao
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -44,15 +46,26 @@ object BackupManager {
 
     data class RestoreSummary(
         val characterCount: Int,
-        val userProfileRestored: Boolean
+        val userProfileRestored: Boolean,
+        val apiConfigRestored: Boolean = false
     )
 
     data class BackupData(
-        val version: Int = 2,
+        val version: Int = 3,
         val timestamp: Long = System.currentTimeMillis(),
         val characters: List<CharacterBackup>,
         /** 个人资料：显示名、人设、头像；旧备份无此字段则恢复时跳过 */
-        val user: UserProfileBackup? = null
+        val user: UserProfileBackup? = null,
+        /** 配置页 API 参数；旧备份无此字段则恢复时跳过 */
+        val apiConfig: ApiConfigBackup? = null
+    )
+
+    data class ApiConfigBackup(
+        val baseUrl: String,
+        val apiKey: String,
+        val model: String,
+        val temperature: Double,
+        val maxTokens: Int
     )
 
     data class UserProfileBackup(
@@ -112,6 +125,23 @@ object BackupManager {
         )
     }
 
+    private fun ApiConfig.toBackup(): ApiConfigBackup = ApiConfigBackup(
+        baseUrl = baseUrl,
+        apiKey = apiKey,
+        model = model,
+        temperature = temperature,
+        maxTokens = maxTokens
+    )
+
+    private fun ApiConfigBackup.toApiConfig(): ApiConfig = ApiConfig(
+        id = 1,
+        baseUrl = baseUrl,
+        apiKey = apiKey,
+        model = model,
+        temperature = temperature,
+        maxTokens = maxTokens
+    )
+
     /** Android 9 及以下：主存储根目录 `ChatBot/Backups`（需 WRITE 权限） */
     fun legacyPublicChatBotBackupsDir(): File {
         val root = Environment.getExternalStorageDirectory()
@@ -151,11 +181,17 @@ object BackupManager {
         )
     }
 
-    private fun writeBackupZip(context: Context, characters: List<Character>, zipOut: ZipOutputStream) {
+    private fun writeBackupZip(
+        context: Context,
+        characters: List<Character>,
+        apiConfig: ApiConfig?,
+        zipOut: ZipOutputStream
+    ) {
         val userBackup = buildUserProfileBackup(context)
         val backupData = BackupData(
             characters = characters.map { it.toBackup() },
-            user = userBackup
+            user = userBackup,
+            apiConfig = apiConfig?.toBackup()
         )
         val gson = Gson()
         val json = gson.toJson(backupData)
@@ -234,7 +270,11 @@ object BackupManager {
         ed.apply()
     }
 
-    suspend fun createBackup(context: Context, characters: List<Character>): Result<BackupSaveInfo> =
+    suspend fun createBackup(
+        context: Context,
+        characters: List<Character>,
+        apiConfig: ApiConfig?
+    ): Result<BackupSaveInfo> =
         withContext(Dispatchers.IO) {
             try {
                 val timestamp =
@@ -258,7 +298,7 @@ object BackupManager {
                     try {
                         resolver.openOutputStream(uri)?.use { out ->
                             ZipOutputStream(out.buffered()).use { zip ->
-                                writeBackupZip(context, characters, zip)
+                                writeBackupZip(context, characters, apiConfig, zip)
                             }
                         } ?: return@withContext Result.failure(IllegalStateException("无法打开备份输出流"))
 
@@ -277,7 +317,7 @@ object BackupManager {
                     val dir = legacyPublicChatBotBackupsDir()
                     val backupFile = File(dir, fileName)
                     ZipOutputStream(FileOutputStream(backupFile)).use { zip ->
-                        writeBackupZip(context, characters, zip)
+                        writeBackupZip(context, characters, apiConfig, zip)
                     }
                     Result.success(
                         BackupSaveInfo(
@@ -294,11 +334,13 @@ object BackupManager {
     suspend fun restoreBackup(
         context: Context,
         backupFile: File,
-        characterDao: com.example.chatbot.database.CharacterDao
+        characterDao: com.example.chatbot.database.CharacterDao,
+        apiConfigDao: ApiConfigDao
     ): Result<RestoreSummary> = withContext(Dispatchers.IO) {
         try {
             var characterCount = 0
             var userProfileRestored = false
+            var apiConfigRestored = false
             val avatarDir = File(context.filesDir, "restored_avatars").apply { mkdirs() }
             val memoryDir = File(context.filesDir, "long_term_memory").apply { mkdirs() }
 
@@ -367,13 +409,20 @@ object BackupManager {
                             applyUserProfileRestore(context, u, avatarDir)
                             userProfileRestored = true
                         }
+
+                        backupData.apiConfig?.let { cfg ->
+                            apiConfigDao.upsertApiConfig(cfg.toApiConfig())
+                            apiConfigRestored = true
+                        }
                     }
                     zipIn.closeEntry()
                     entry = zipIn.nextEntry
                 }
             }
 
-            Result.success(RestoreSummary(characterCount, userProfileRestored))
+            Result.success(
+                RestoreSummary(characterCount, userProfileRestored, apiConfigRestored)
+            )
         } catch (e: Exception) {
             Result.failure(e)
         }

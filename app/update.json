@@ -1,9 +1,9 @@
 {
-  "versionCode": 6,
-  "versionName": "1.2.0",
+  "versionCode": 7,
+  "versionName": "1.2.1",
   "minVersionCode": 5,
-  "apkUrl": "https://github.com/Squemadylan/TalkChatBot/releases/download/v1.2.0/app-debug.apk",
-  "changelog": "应用内更新、网盘手动更新与体验优化。",
-  "sha256": "",
+  "apkUrl": "https://github.com/Squemadylan/TalkChatBot/releases/download/v1.2.1/app-debug.apk",
+  "changelog": "备份与恢复现包含配置页 API 地址、密钥、模型、温度、最大 Token 等参数。",
+  "sha256": "e3f2001ee698e1c1cab281bdd4b263643b32dd32f5c617acf970129190a3801b",
   "manualUpdateUrl": "https://pan.quark.cn/s/a41944831659"
 }

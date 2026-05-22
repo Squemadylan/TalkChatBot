@@ -732,7 +732,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="导出当前设置，或从备份恢复"
+                        android:text="导出角色、个人资料与 API 配置，或从备份恢复"
                         android:textColor="@color/text_secondary"
                         android:textSize="@dimen/kd_font_small"/>
 

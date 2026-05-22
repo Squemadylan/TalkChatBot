@@ -444,7 +444,7 @@ class SettingFragment : Fragment() {
     private fun showBackupRestoreDialog() {
         ConfirmDialog(
             title = "备份与恢复",
-            message = "是否备份所有角色数据？\n\n点击\"恢复\"可从备份文件恢复",
+            message = "将备份角色、个人资料及配置页中的 API 地址、密钥、模型、温度、最大 Token 等参数。\n\n点击\"恢复\"可从备份文件恢复",
             positiveText = "备份",
             negativeText = "恢复",
             onConfirm = {
@@ -471,8 +471,11 @@ class SettingFragment : Fragment() {
                 val characters = withContext(Dispatchers.IO) {
                     characterRepository.allCharacters.first()
                 }
+                val apiConfig = withContext(Dispatchers.IO) {
+                    app.database.apiConfigDao().getApiConfig()
+                }
 
-                val result = BackupManager.createBackup(requireContext(), characters)
+                val result = BackupManager.createBackup(requireContext(), characters, apiConfig)
                 result.onSuccess { info ->
                     if (!isAdded) return@launch
                     Toast.makeText(
@@ -507,7 +510,12 @@ class SettingFragment : Fragment() {
                     }
                 }
 
-                val result = BackupManager.restoreBackup(requireContext(), tempFile, app.database.characterDao())
+                val result = BackupManager.restoreBackup(
+                    requireContext(),
+                    tempFile,
+                    app.database.characterDao(),
+                    app.database.apiConfigDao()
+                )
 
                 tempFile.delete()
 
@@ -516,9 +524,12 @@ class SettingFragment : Fragment() {
                         loadUserAvatar()
                         loadUserProfileTexts()
                     }
-                    val userLine =
-                        if (summary.userProfileRestored) "，个人资料已恢复" else ""
-                    showToast("恢复成功！\n共恢复 ${summary.characterCount} 个角色$userLine")
+                    val extras = buildList {
+                        if (summary.userProfileRestored) add("个人资料")
+                        if (summary.apiConfigRestored) add("API 配置")
+                    }
+                    val extraLine = if (extras.isEmpty()) "" else "，${extras.joinToString("、")}已恢复"
+                    showToast("恢复成功！\n共恢复 ${summary.characterCount} 个角色$extraLine")
                 }.onFailure { e ->
                     showToast("恢复失败：${e.message}")
                 }
