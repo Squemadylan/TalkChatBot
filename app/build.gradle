@@ -13,8 +13,8 @@ android {
         applicationId "com.example.chatbot"
         minSdk 26
         targetSdk 34
-        versionCode 4
-        versionName "1.1.1"
+        versionCode 6
+        versionName "1.2.0"
 
         // 与仓库 app/update.json 对应；镜像与 assets 兜底用于 GitHub 不可达（如国内网络）
         buildConfigField "String", "UPDATE_MANIFEST_URL",

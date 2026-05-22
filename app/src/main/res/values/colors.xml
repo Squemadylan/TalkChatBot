@@ -28,6 +28,8 @@
     <color name="pink_accent">@color/kd_public_hover</color>
     <color name="text_primary">@color/kd_text_primary</color>
     <color name="text_secondary">@color/kd_text_secondary</color>
+    <!-- 强制更新蒙版：半透明暗色，配合窗口模糊 -->
+    <color name="update_scrim">#B3000000</color>
     <color name="text_on_primary">@color/kd_color_white</color>
     <color name="bottom_nav_unselected">@color/kd_icon_secondary</color>
     <color name="bottom_nav_selected">@color/kd_public_normal</color>

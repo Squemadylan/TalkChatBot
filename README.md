@@ -4,7 +4,7 @@
 
 > 仓库名仍为 [TalkChatBot](https://github.com/Squemadylan/TalkChatBot)；应用显示名与图标已更新为 **独白匣**。
 
-- **当前版本**：1.1.1（versionCode 4）
+- **当前版本**：1.2.0（versionCode 6）
 - **最低系统**：Android 8.0（API 26）
 - **目标 SDK**：34
 - **仓库**：[github.com/Squemadylan/TalkChatBot](https://github.com/Squemadylan/TalkChatBot)
@@ -185,8 +185,8 @@ Debug APK 路径：`app/build/outputs/apk/debug/app-debug.apk`
 
 ### 示例（当前线上配置思路）
 
-- **`versionCode` 必须与已发布的最新 APK 一致**。当前最新为 **1.1.1（versionCode 4）** 时，应设 `versionCode: 4`、`minVersionCode: 4`，已装 v4 的用户**不会**再收到更新提示。
-- 发布 **v5** 后：改为 `versionCode: 5`；若仍兼容 v4，保持 `minVersionCode: 4`（v4 可选更新）；若不兼容，设 `minVersionCode: 5`（v4 强制更新）。
+- **`versionCode` 必须与已发布的最新 APK 一致**。当前最新为 **1.2.0（versionCode 6）** 时，应设 `versionCode: 6`；已装 v6 的用户**不会**再收到更新提示。
+- 当前线上策略示例：`versionCode: 6`、`minVersionCode: 5`（v5 可选更新，v4 及以下强制更新）。
 
 > **注意**：jsDelivr 镜像有缓存。发版后若手机仍读到旧配置，请将 `app/build.gradle` 中 `UPDATE_MANIFEST_URL_MIRROR` 的 `@main` 改为**本次提交的 commit SHA**（见 [jsDelivr GitHub 文档](https://www.jsdelivr.com/documentation#id2534427)），或等待缓存刷新。
 

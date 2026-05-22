@@ -20,16 +20,19 @@
     <string name="update_check_in_progress">正在处理更新，请稍候</string>
     <string name="update_check_failed">检查更新失败：%1$s</string>
     <string name="update_already_latest">当前已是最新版本</string>
-    <string name="update_optional_title">发现新版本 %1$s</string>
-    <string name="update_force_title">需要更新才能继续使用</string>
-    <string name="update_no_changelog">暂无更新说明</string>
-    <string name="update_optional_hint">可选择稍后更新；在设置中可随时再次检查。</string>
-    <string name="update_force_hint">当前版本过低，请立即下载并安装新版本。</string>
+    <string name="update_optional_title">发现新版本</string>
+    <string name="update_force_title">需要更新</string>
+    <string name="update_message_optional">建议立即更新以获得最新功能与修复。</string>
+    <string name="update_message_force">请更新至最新版后继续使用。下载失败可点「网盘手动更新」。</string>
     <string name="update_action_download">立即更新</string>
     <string name="update_action_later">稍后再说</string>
-    <string name="update_downloading">正在下载安装包…</string>
+    <string name="update_download_preparing">准备下载…</string>
+    <string name="update_downloading_percent">已下载 %1$d%%</string>
+    <string name="update_downloading_unknown">正在下载…</string>
+    <string name="update_download_complete">下载完成，正在打开安装…</string>
     <string name="update_download_in_progress">正在下载，请勿重复操作</string>
     <string name="update_download_failed">下载失败：%1$s</string>
+    <string name="update_download_failed_in_dialog">下载失败，请重试或使用网盘手动更新。</string>
     <string name="update_install_permission_required">请先允许「安装未知应用」权限，然后再次点击更新</string>
 
     <string name="update_manual_url" translatable="false">https://pan.quark.cn/s/a41944831659</string>
@@ -37,5 +40,6 @@
     <string name="update_manual_subtitle">GitHub 无法访问时，打开夸克网盘下载安装包</string>
     <string name="update_manual_open_failed">无法打开浏览器，请复制链接到浏览器访问：%1$s</string>
     <string name="update_action_manual_pan">网盘手动更新</string>
-    <string name="update_force_manual_hint">若自动下载失败，可点击下方「网盘手动更新」获取安装包。</string>
+    <string name="update_manual_opened_hint">已在浏览器打开网盘，请下载安装后返回。</string>
+
 </resources>

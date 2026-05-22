@@ -5,12 +5,22 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.RenderEffect
+import android.graphics.Shader
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.util.Log
 import android.view.KeyEvent
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.view.WindowManager
+import android.widget.FrameLayout
+import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
@@ -35,6 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 object AppUpdateManager {
 
     private const val TAG = "AppUpdateManager"
+    private const val SCRIM_TAG = "app_update_scrim"
     private const val PREFS_KEY_LAST_OPTIONAL_CHECK_MS = "last_optional_update_check_ms"
     private const val OPTIONAL_CHECK_INTERVAL_MS = 24L * 60 * 60 * 1000
 
@@ -56,6 +67,20 @@ object AppUpdateManager {
 
     private val isDownloading = AtomicBoolean(false)
     private val isUpdateDialogVisible = AtomicBoolean(false)
+
+    @Volatile
+    private var activeUpdateUi: ActiveUpdateUi? = null
+
+    @Volatile
+    private var scrimHostActivity: FragmentActivity? = null
+
+    private data class ActiveUpdateUi(
+        val dialog: AlertDialog,
+        val messageView: TextView,
+        val progressBar: ProgressBar,
+        val progressText: TextView,
+        val force: Boolean
+    )
 
     sealed class UpdateStatus {
         data object UpToDate : UpdateStatus()
@@ -265,6 +290,13 @@ object AppUpdateManager {
             .apply()
     }
 
+    private fun buildUpdateMessage(activity: FragmentActivity, force: Boolean): String =
+        if (force) {
+            activity.getString(R.string.update_message_force)
+        } else {
+            activity.getString(R.string.update_message_optional)
+        }
+
     private fun showUpdateDialog(
         activity: FragmentActivity,
         manifest: UpdateManifest,
@@ -275,20 +307,7 @@ object AppUpdateManager {
         val title = if (force) {
             activity.getString(R.string.update_force_title)
         } else {
-            activity.getString(R.string.update_optional_title, manifest.versionName.ifBlank { manifest.versionCode.toString() })
-        }
-        val changelog = manifest.changelog.trim().ifBlank { activity.getString(R.string.update_no_changelog) }
-        val message = buildString {
-            append(changelog)
-            if (!force) {
-                append("\n\n")
-                append(activity.getString(R.string.update_optional_hint))
-            } else {
-                append("\n\n")
-                append(activity.getString(R.string.update_force_hint))
-                append("\n")
-                append(activity.getString(R.string.update_force_manual_hint))
-            }
+            activity.getString(R.string.update_optional_title)
         }
 
         activity.window.decorView.post {
@@ -296,78 +315,205 @@ object AppUpdateManager {
                 isUpdateDialogVisible.set(false)
                 return@post
             }
+            val content = LayoutInflater.from(activity).inflate(R.layout.dialog_app_update, null)
+            val messageView = content.findViewById<TextView>(R.id.tvUpdateMessage)
+            val progressBar = content.findViewById<ProgressBar>(R.id.progressUpdate)
+            val progressText = content.findViewById<TextView>(R.id.tvUpdateProgress)
+            messageView.text = buildUpdateMessage(activity, force)
+
             val builder = MaterialAlertDialogBuilder(activity)
                 .setTitle(title)
-                .setMessage(message)
+                .setView(content)
                 .setCancelable(!force)
-                .setPositiveButton(activity.getString(R.string.update_action_download)) { _, _ ->
-                    isUpdateDialogVisible.set(false)
-                    activity.lifecycleScope.launch {
-                        downloadAndInstall(activity, manifest)
-                    }
-                }
+                // null：避免点击后立即 dismiss，下载时保持弹窗
+                .setPositiveButton(activity.getString(R.string.update_action_download), null)
             if (force) {
-                builder.setNegativeButton(activity.getString(R.string.update_action_manual_pan)) { _, _ ->
-                    openManualUpdatePage(activity, manifest)
-                }
+                builder.setNegativeButton(activity.getString(R.string.update_action_manual_pan), null)
             } else {
-                builder.setNegativeButton(activity.getString(R.string.update_action_later)) { _, _ ->
-                    isUpdateDialogVisible.set(false)
-                }
+                builder.setNegativeButton(activity.getString(R.string.update_action_later), null)
             }
             val dialog = builder.create()
+            applyUpdateDialogWindowEffects(dialog)
             dialog.setCanceledOnTouchOutside(false)
             if (force) {
                 dialog.setOnKeyListener { _, keyCode, event ->
                     keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP
                 }
             }
-            dialog.setOnDismissListener { isUpdateDialogVisible.set(false) }
+            attachUpdateScrim(activity)
+            dialog.setOnDismissListener {
+                detachUpdateScrim()
+                activeUpdateUi = null
+                isUpdateDialogVisible.set(false)
+            }
+            activeUpdateUi = ActiveUpdateUi(dialog, messageView, progressBar, progressText, force)
+            dialog.setOnShowListener {
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setOnClickListener {
+                    beginDownloadInDialog(activity, manifest)
+                }
+                dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setOnClickListener {
+                    if (force) {
+                        openManualUpdatePage(activity, manifest)
+                        messageView.text = activity.getString(R.string.update_manual_opened_hint)
+                    } else {
+                        dialog.dismiss()
+                    }
+                }
+            }
             dialog.show()
         }
     }
 
-    private suspend fun downloadAndInstall(activity: FragmentActivity, manifest: UpdateManifest) {
+    /** 底层虚化蒙版 + 拦截点击，弹窗叠在上方 */
+    private fun attachUpdateScrim(activity: FragmentActivity) {
+        val root = activity.findViewById<ViewGroup>(android.R.id.content) ?: return
+        if (root.findViewWithTag<View>(SCRIM_TAG) != null) return
+        val scrim = FrameLayout(activity).apply {
+            tag = SCRIM_TAG
+            setBackgroundResource(R.drawable.bg_update_scrim)
+            isClickable = true
+            isFocusable = true
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+        root.addView(
+            scrim,
+            ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
+        scrimHostActivity = activity
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            activity.window.decorView.setRenderEffect(
+                RenderEffect.createBlurEffect(22f, 22f, Shader.TileMode.CLAMP)
+            )
+        }
+    }
+
+    private fun detachUpdateScrim() {
+        val activity = scrimHostActivity ?: return
+        scrimHostActivity = null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            activity.window.decorView.setRenderEffect(null)
+        }
+        val root = activity.findViewById<ViewGroup>(android.R.id.content) ?: return
+        root.findViewWithTag<View>(SCRIM_TAG)?.let { root.removeView(it) }
+    }
+
+    private fun applyUpdateDialogWindowEffects(dialog: AlertDialog) {
+        dialog.window?.let { window ->
+            window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            window.attributes = window.attributes.apply {
+                dimAmount = 0.45f
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                window.setBackgroundBlurRadius(48)
+            }
+        }
+    }
+
+    private fun beginDownloadInDialog(activity: FragmentActivity, manifest: UpdateManifest) {
+        val ui = activeUpdateUi ?: return
         if (!isDownloading.compareAndSet(false, true)) {
             toast(activity, activity.getString(R.string.update_download_in_progress))
             return
         }
-        try {
-            if (!ensureInstallPermission(activity)) {
-                return
+        ui.dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = false
+        // 强制更新时保留「网盘手动更新」，便于下载失败时切换渠道
+        if (!ui.force) {
+            ui.dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.isEnabled = false
+        }
+        ui.messageView.text = activity.getString(R.string.update_download_preparing)
+        ui.progressBar.visibility = View.VISIBLE
+        ui.progressBar.isIndeterminate = true
+        ui.progressText.visibility = View.VISIBLE
+        ui.progressText.text = activity.getString(R.string.update_download_preparing)
+
+        activity.lifecycleScope.launch {
+            try {
+                if (!ensureInstallPermission(activity)) {
+                    restoreDialogAfterDownloadFailure(activity.getString(R.string.update_install_permission_required))
+                    return@launch
+                }
+                val apkFile = withContext(Dispatchers.IO) {
+                    downloadApk(activity.applicationContext, manifest) { downloaded, total ->
+                        activity.runOnUiThread {
+                            updateDownloadProgressUi(activity, downloaded, total)
+                        }
+                    }
+                }
+                withContext(Dispatchers.Main) {
+                    showDownloadCompleteUi(activity)
+                    launchPackageInstaller(activity, apkFile)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Download or install failed", e)
+                restoreDialogAfterDownloadFailure(
+                    activity.getString(R.string.update_download_failed_in_dialog)
+                )
+            } finally {
+                isDownloading.set(false)
             }
-            toast(activity, activity.getString(R.string.update_downloading))
-            val apkFile = withContext(Dispatchers.IO) {
-                downloadApk(activity.applicationContext, manifest)
-            }
-            withContext(Dispatchers.Main) {
-                launchPackageInstaller(activity, apkFile)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Download or install failed", e)
-            toast(activity, activity.getString(R.string.update_download_failed, e.message ?: "未知错误"))
-        } finally {
-            isDownloading.set(false)
         }
     }
 
-    private suspend fun downloadApk(context: Context, manifest: UpdateManifest): File {
+    private fun updateDownloadProgressUi(activity: FragmentActivity, downloaded: Long, total: Long) {
+        val ui = activeUpdateUi ?: return
+        ui.progressBar.visibility = View.VISIBLE
+        ui.progressText.visibility = View.VISIBLE
+        if (total > 0L) {
+            val percent = ((downloaded * 100) / total).toInt().coerceIn(0, 100)
+            ui.progressBar.isIndeterminate = false
+            ui.progressBar.progress = percent
+            ui.progressText.text = activity.getString(R.string.update_downloading_percent, percent)
+        } else {
+            ui.progressBar.isIndeterminate = true
+            ui.progressText.text = activity.getString(R.string.update_downloading_unknown)
+        }
+    }
+
+    private fun showDownloadCompleteUi(activity: FragmentActivity) {
+        val ui = activeUpdateUi ?: return
+        ui.progressBar.isIndeterminate = false
+        ui.progressBar.progress = 100
+        ui.progressText.text = activity.getString(R.string.update_downloading_percent, 100)
+        ui.messageView.text = activity.getString(R.string.update_download_complete)
+    }
+
+    private fun restoreDialogAfterDownloadFailure(errorMessage: String) {
+        val ui = activeUpdateUi ?: return
+        ui.progressBar.visibility = View.GONE
+        ui.progressText.visibility = View.GONE
+        ui.messageView.text = errorMessage
+        ui.dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = true
+        ui.dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.isEnabled = true
+    }
+
+    private suspend fun downloadApk(
+        context: Context,
+        manifest: UpdateManifest,
+        onProgress: (downloaded: Long, total: Long) -> Unit
+    ): File {
         val dir = File(context.getExternalFilesDir(null), "updates").apply { mkdirs() }
-        val safeName = "独白匣_${manifest.versionName.ifBlank { "v${manifest.versionCode}" }}.apk"
-            .replace(Regex("""[\\/:*?"<>|]"""), "_")
-        val outFile = File(dir, safeName)
+        val outFile = File(dir, "独白匣_update.apk")
         if (outFile.exists()) outFile.delete()
 
         val request = Request.Builder().url(manifest.apkUrl).get().build()
         httpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) error("下载失败 HTTP ${response.code}")
             val body = response.body ?: error("下载内容为空")
+            val total = body.contentLength().coerceAtLeast(0L)
+            onProgress(0L, total)
             body.byteStream().use { input ->
                 FileOutputStream(outFile).use { output ->
                     val buffer = ByteArray(8192)
+                    var downloaded = 0L
                     var read: Int
                     while (input.read(buffer).also { read = it } != -1) {
                         output.write(buffer, 0, read)
+                        downloaded += read
+                        onProgress(downloaded, total)
                     }
                     output.flush()
                 }
