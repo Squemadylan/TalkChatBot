@@ -14,12 +14,20 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 class MainActivity : AppCompatActivity() {
 
     private var isNavInitialized = false
+    private var startupUpdateCheckDone = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         initializeNavigation()
-        AppUpdateManager.runStartupCheck(this)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!startupUpdateCheckDone) {
+            startupUpdateCheckDone = true
+            AppUpdateManager.runStartupCheck(this)
+        }
     }
 
     private fun initializeNavigation() {

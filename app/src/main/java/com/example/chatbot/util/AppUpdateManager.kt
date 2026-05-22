@@ -46,6 +46,14 @@ object AppUpdateManager {
         .retryOnConnectionFailure(true)
         .build()
 
+    /** 拉取 version.json 专用，失败时尽快走内置兜底 */
+    private val manifestHttpClient: OkHttpClient = OkHttpClient.Builder()
+        .connectTimeout(6, TimeUnit.SECONDS)
+        .readTimeout(8, TimeUnit.SECONDS)
+        .writeTimeout(8, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(false)
+        .build()
+
     private val isDownloading = AtomicBoolean(false)
     private var resultListenerRegistered = false
 
@@ -122,26 +130,57 @@ object AppUpdateManager {
         return UpdateStatus.UpToDate
     }
 
-    suspend fun fetchManifest(): Result<UpdateManifest> = withContext(Dispatchers.IO) {
-        runCatching {
-            val url = BuildConfig.UPDATE_MANIFEST_URL.trim()
-            require(url.isNotEmpty()) { "未配置更新清单地址" }
-            val request = Request.Builder()
-                .url(url)
-                .header("Accept", "application/json")
-                .get()
-                .build()
-            httpClient.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    error("HTTP ${response.code}")
-                }
-                val body = response.body?.string()?.trim().orEmpty()
-                if (body.isEmpty()) error("更新清单为空")
-                val manifest = gson.fromJson(body, UpdateManifest::class.java)
-                validateManifest(manifest)
-                manifest
+    private fun manifestUrls(): List<String> = listOfNotNull(
+        BuildConfig.UPDATE_MANIFEST_URL.trim().takeIf { it.isNotEmpty() },
+        BuildConfig.UPDATE_MANIFEST_URL_MIRROR.trim().takeIf { it.isNotEmpty() }
+    ).distinct()
+
+    suspend fun fetchManifest(context: Context): Result<UpdateManifest> = withContext(Dispatchers.IO) {
+        var lastError: Throwable? = null
+        for (url in manifestUrls()) {
+            val result = fetchManifestFromUrl(url)
+            if (result.isSuccess) {
+                Log.d(TAG, "Loaded update manifest from $url")
+                return@withContext result
             }
+            lastError = result.exceptionOrNull()
+            Log.w(TAG, "Failed to load manifest from $url", lastError)
         }
+        loadEmbeddedFallbackManifest(context)?.let { manifest ->
+            Log.i(TAG, "Using embedded fallback update manifest (minVersionCode=${manifest.minVersionCode})")
+            return@withContext Result.success(manifest)
+        }
+        Result.failure(lastError ?: IllegalStateException("无法获取更新配置"))
+    }
+
+    private fun fetchManifestFromUrl(url: String): Result<UpdateManifest> = runCatching {
+        val request = Request.Builder()
+            .url(url)
+            .header("Accept", "application/json")
+            .get()
+            .build()
+        manifestHttpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                error("HTTP ${response.code}")
+            }
+            parseManifestJson(response.body?.string().orEmpty())
+        }
+    }
+
+    private fun loadEmbeddedFallbackManifest(context: Context): UpdateManifest? = runCatching {
+        context.assets.open("update_manifest_fallback.json").bufferedReader().use { reader ->
+            parseManifestJson(reader.readText())
+        }
+    }.onFailure { e ->
+        Log.w(TAG, "Embedded fallback manifest unavailable", e)
+    }.getOrNull()
+
+    private fun parseManifestJson(body: String): UpdateManifest {
+        val trimmed = body.trim()
+        if (trimmed.isEmpty()) error("更新清单为空")
+        val manifest = gson.fromJson(trimmed, UpdateManifest::class.java)
+        validateManifest(manifest)
+        return manifest
     }
 
     private fun validateManifest(manifest: UpdateManifest) {
@@ -164,7 +203,7 @@ object AppUpdateManager {
         if (activity.supportFragmentManager.findFragmentByTag(DIALOG_TAG) != null) return
         activity.lifecycleScope.launch {
             val localCode = localVersionCode(activity)
-            val manifestResult = fetchManifest()
+            val manifestResult = fetchManifest(activity)
             manifestResult.onFailure { e ->
                 Log.w(TAG, "Startup update check failed", e)
                 return@launch
@@ -172,7 +211,10 @@ object AppUpdateManager {
             val manifest = manifestResult.getOrThrow()
             val status = evaluate(localCode, manifest)
             when (status) {
-                is UpdateStatus.ForceRequired -> showUpdateDialog(activity, status.manifest, force = true)
+                is UpdateStatus.ForceRequired -> {
+                    Log.i(TAG, "Force update required: local=$localCode min=${status.manifest.minVersionCode}")
+                    showUpdateDialog(activity, status.manifest, force = true)
+                }
                 is UpdateStatus.Optional -> {
                     if (shouldRunOptionalCheck(activity)) {
                         markOptionalCheckDone(activity)
@@ -193,7 +235,7 @@ object AppUpdateManager {
         activity.lifecycleScope.launch {
             toast(activity, activity.getString(R.string.update_checking))
             val localCode = localVersionCode(activity)
-            val manifestResult = fetchManifest()
+            val manifestResult = fetchManifest(activity)
             manifestResult.onFailure { e ->
                 Log.w(TAG, "Manual update check failed", e)
                 toast(activity, activity.getString(R.string.update_check_failed, e.message ?: "未知错误"))
@@ -265,7 +307,7 @@ object AppUpdateManager {
             negativeText = negativeText,
             manifestJson = gson.toJson(manifest),
             manualUpdateUrl = resolveManualUpdateUrl(activity, manifest)
-        ).show(activity.supportFragmentManager, DIALOG_TAG)
+        ).showNow(activity.supportFragmentManager, DIALOG_TAG)
     }
 
     private fun ensureResultListener(activity: FragmentActivity) {

@@ -16,9 +16,11 @@ android {
         versionCode 4
         versionName "1.1.1"
 
-        // 与仓库 app/update.json 对应（main 分支 Raw 地址）
+        // 与仓库 app/update.json 对应；镜像与 assets 兜底用于 GitHub 不可达（如国内网络）
         buildConfigField "String", "UPDATE_MANIFEST_URL",
                 "\"https://raw.githubusercontent.com/Squemadylan/TalkChatBot/main/app/update.json\""
+        buildConfigField "String", "UPDATE_MANIFEST_URL_MIRROR",
+                "\"https://cdn.jsdelivr.net/gh/Squemadylan/TalkChatBot@main/app/update.json\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
