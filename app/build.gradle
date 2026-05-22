@@ -21,7 +21,7 @@ android {
                 "\"https://raw.githubusercontent.com/Squemadylan/TalkChatBot/main/app/update.json\""
         // 使用 commit SHA 避免 @main 被 jsDelivr 长期缓存旧配置；发版改 update.json 后请同步更新此 SHA
         buildConfigField "String", "UPDATE_MANIFEST_URL_MIRROR",
-                "\"https://cdn.jsdelivr.net/gh/Squemadylan/TalkChatBot@d7e9ec5/app/update.json\""
+                "\"https://cdn.jsdelivr.net/gh/Squemadylan/TalkChatBot@ae286ac/app/update.json\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
