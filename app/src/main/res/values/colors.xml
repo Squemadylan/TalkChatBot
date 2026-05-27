@@ -47,4 +47,8 @@
 
     <!-- 自适应图标底色（与角色图浅蓝背景协调） -->
     <color name="ic_launcher_background">#FAD9E3</color>
+
+    <!-- 状态颜色 -->
+    <color name="success_green">#4CAF50</color>
+    <color name="error_red">#F44336</color>
 </resources>

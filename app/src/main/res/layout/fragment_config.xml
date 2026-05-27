@@ -111,6 +111,32 @@
                     android:src="@drawable/ic_visibility_off" />
             </FrameLayout>
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="@dimen/kd_space_300"
+                android:gravity="center_vertical">
+
+                <Spinner
+                    android:id="@+id/spinnerModelPreset"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/kd_input_height"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_input_radius"
+                    android:paddingHorizontal="@dimen/kd_space_400"
+                    android:layout_marginEnd="@dimen/kd_space_200"/>
+
+                <Button
+                    android:id="@+id/btnApplyPreset"
+                    android:layout_width="wrap_content"
+                    android:layout_height="@dimen/kd_input_height"
+                    android:text="应用"
+                    android:textSize="@dimen/kd_font_base"
+                    android:background="@drawable/bg_button_outline_radius"/>
+
+            </LinearLayout>
+
             <EditText
                 android:id="@+id/etModel"
                 android:layout_width="match_parent"
@@ -159,7 +185,134 @@
                 android:layout_height="wrap_content"
                 android:textColor="@color/text_secondary"
                 android:textSize="@dimen/kd_font_small"
-                android:lineSpacingExtra="2dp"/>
+                android:lineSpacingExtra="2dp"
+                android:layout_marginBottom="@dimen/kd_space_300"/>
+
+            <Button
+                android:id="@+id/btnCheckConnection"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/kd_input_height"
+                android:text="检测连接"
+                android:textColor="@color/text_on_primary"
+                android:textSize="@dimen/kd_font_large"
+                android:background="@drawable/bg_button_radius"/>
+
+            <TextView
+                android:id="@+id/tvConnectionStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/kd_font_small"
+                android:gravity="center"
+                android:layout_marginTop="@dimen/kd_space_200"
+                android:visibility="gone"/>
+
+        </LinearLayout>
+
+        <!-- 配置摘要卡片 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card_radius"
+            android:padding="@dimen/kd_space_500"
+            android:layout_marginBottom="@dimen/kd_space_400">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="配置摘要"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/kd_font_large"
+                android:textStyle="bold"
+                android:layout_marginBottom="@dimen/kd_space_300"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="@dimen/kd_space_200">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Base URL"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/kd_font_base"/>
+
+                <TextView
+                    android:id="@+id/tvSummaryBaseUrl"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="2"
+                    android:text="未设置"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/kd_font_base"
+                    android:gravity="end"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="@dimen/kd_space_200">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="模型"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/kd_font_base"/>
+
+                <TextView
+                    android:id="@+id/tvSummaryModel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="2"
+                    android:text="未设置"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/kd_font_base"
+                    android:gravity="end"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="@dimen/kd_space_200">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="最后检测"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/kd_font_base"/>
+
+                <TextView
+                    android:id="@+id/tvSummaryLastCheck"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="2"
+                    android:text="从未检测"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/kd_font_base"
+                    android:gravity="end"/>
+
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btnCopyConfig"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/kd_input_height"
+                android:text="复制配置信息"
+                android:textColor="@color/pink_primary"
+                android:textSize="@dimen/kd_font_base"
+                android:background="@drawable/bg_button_outline_radius"/>
 
         </LinearLayout>
 

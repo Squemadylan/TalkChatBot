@@ -1,6 +1,9 @@
 package com.example.chatbot.ui.config
 
 import android.content.ActivityNotFoundException
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -12,6 +15,8 @@ import android.text.method.PasswordTransformationMethod
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -22,11 +27,16 @@ import com.example.chatbot.App
 import com.example.chatbot.R
 import com.example.chatbot.data.repository.ApiConfigRepository
 import com.example.chatbot.databinding.FragmentConfigBinding
+import com.example.chatbot.util.ApiCheckResult
+import com.example.chatbot.util.ApiConnectionChecker
 import com.example.chatbot.util.ModelDefaultTokens
 import com.example.chatbot.viewmodel.ApiConfigViewModel
 import com.example.chatbot.viewmodel.ApiConfigViewModelFactory
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class ConfigFragment : Fragment() {
 
@@ -80,11 +90,14 @@ class ConfigFragment : Fragment() {
         setupApiKeyVisibilityToggle()
         setupAutoSave()
         setupAutoMaxTokensFromModel()
+        setupModelPresetSpinner()
+        setupCheckConnection()
     }
 
     override fun onResume() {
         super.onResume()
         viewModel?.loadConfig()
+        updateConfigSummary()
     }
 
     private fun initializeViewModel() {
@@ -160,6 +173,146 @@ class ConfigFragment : Fragment() {
         binding?.btnRegisterSiliconflow?.setOnClickListener {
             openSiliconFlowRegisterPage()
         }
+    }
+
+    private fun setupModelPresetSpinner() {
+        if (_binding == null) return
+
+        val presetNames = MODEL_PRESETS.map { it.name }
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, presetNames)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding?.spinnerModelPreset?.adapter = adapter
+
+        binding?.spinnerModelPreset?.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                // 仅记录选择，不自动填入
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+
+        binding?.btnApplyPreset?.setOnClickListener {
+            val position = binding?.spinnerModelPreset?.selectedItemPosition ?: return@setOnClickListener
+            val preset = MODEL_PRESETS[position]
+            if (preset.name == "自定义") {
+                showToastSafe("请手动输入自定义模型")
+                return@setOnClickListener
+            }
+            applyingRemoteConfig = true
+            binding?.etBaseUrl?.setText(preset.baseUrl)
+            binding?.etModel?.setText(preset.model)
+            applyingRemoteConfig = false
+            showToastSafe("已应用预设：${preset.name}")
+        }
+    }
+
+    private fun setupCheckConnection() {
+        if (_binding == null) return
+
+        binding?.btnCheckConnection?.setOnClickListener {
+            performConnectionCheck()
+        }
+
+        binding?.btnCopyConfig?.setOnClickListener {
+            copyConfigToClipboard()
+        }
+    }
+
+    private fun performConnectionCheck() {
+        if (_binding == null) return
+
+        val config = captureFormSnapshot() ?: return
+        if (config.baseUrl.isBlank() || config.apiKey.isBlank() || config.model.isBlank()) {
+            showToastSafe("请先填写完整的 API 配置")
+            return
+        }
+
+        // 显示加载状态
+        binding?.btnCheckConnection?.isEnabled = false
+        binding?.btnCheckConnection?.text = "检测中..."
+        binding?.tvConnectionStatus?.visibility = View.VISIBLE
+        binding?.tvConnectionStatus?.text = "正在检测连接..."
+
+        val apiConfig = com.example.chatbot.data.model.ApiConfig(
+            id = 1,
+            baseUrl = config.baseUrl,
+            apiKey = config.apiKey,
+            model = config.model,
+            temperature = config.temperature,
+            maxTokens = config.maxTokensRaw.toIntOrNull() ?: 4096
+        )
+
+        lifecycleScope.launch {
+            val result = ApiConnectionChecker.checkConnection(apiConfig)
+            displayConnectionResult(result)
+        }
+    }
+
+    private fun displayConnectionResult(result: ApiCheckResult) {
+        binding?.btnCheckConnection?.isEnabled = true
+        binding?.btnCheckConnection?.text = "检测连接"
+
+        if (result.success) {
+            binding?.tvConnectionStatus?.text = "✓ 连接成功（${result.latencyMs}ms）"
+            binding?.tvConnectionStatus?.setTextColor(resources.getColor(R.color.success_green, null))
+            updateLastCheckTime()
+            showToastSafe("API 连接正常")
+        } else {
+            val errorMsg = "${result.errorMessage}"
+            binding?.tvConnectionStatus?.text = "✗ $errorMsg"
+            binding?.tvConnectionStatus?.setTextColor(resources.getColor(R.color.error_red, null))
+            showToastSafe("API 连接失败：$errorMsg")
+        }
+    }
+
+    private fun updateLastCheckTime() {
+        val prefs = requireContext().getSharedPreferences(App.PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putLong("last_api_check_time", System.currentTimeMillis()).apply()
+        updateConfigSummary()
+    }
+
+    private fun updateConfigSummary() {
+        if (_binding == null) return
+
+        val config = viewModel?.apiConfig?.value
+        val prefs = requireContext().getSharedPreferences(App.PREFS_NAME, Context.MODE_PRIVATE)
+
+        // Base URL 脱敏显示
+        val baseUrl = config?.baseUrl ?: "未设置"
+        val displayUrl = if (baseUrl.length > 30) {
+            baseUrl.take(15) + "..." + baseUrl.takeLast(10)
+        } else {
+            baseUrl
+        }
+        binding?.tvSummaryBaseUrl?.text = displayUrl
+
+        // 模型名
+        binding?.tvSummaryModel?.text = config?.model ?: "未设置"
+
+        // 最后检测时间
+        val lastCheckTime = prefs.getLong("last_api_check_time", 0)
+        val lastCheckText = if (lastCheckTime > 0) {
+            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+            sdf.format(Date(lastCheckTime))
+        } else {
+            "从未检测"
+        }
+        binding?.tvSummaryLastCheck?.text = lastCheckText
+    }
+
+    private fun copyConfigToClipboard() {
+        val config = viewModel?.apiConfig?.value ?: return
+        val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val summary = buildString {
+            appendLine("=== 独白匣 API 配置 ===")
+            appendLine("Base URL: ${config.baseUrl}")
+            appendLine("模型: ${config.model}")
+            appendLine("温度: ${config.temperature}")
+            appendLine("最大 Token: ${config.maxTokens}")
+            appendLine("====================")
+        }
+        val clip = ClipData.newPlainText("API Config", summary)
+        clipboard.setPrimaryClip(clip)
+        showToastSafe("配置信息已复制到剪贴板")
     }
 
     private fun openSiliconFlowRegisterPage() {
@@ -354,5 +507,17 @@ class ConfigFragment : Fragment() {
         private const val TAG = "ConfigFragment"
         private const val SILICONFLOW_REGISTER_URL = "https://cloud.siliconflow.cn/i/jJkqmCeU"
         private const val AUTO_SAVE_DELAY_MS = 600L
+
+        // 模型预设列表
+        val MODEL_PRESETS = listOf(
+            ModelPreset("DeepSeek V3.2（推荐）", "https://api.siliconflow.cn/v1", "deepseek-ai/DeepSeek-V3.2"),
+            ModelPreset("DeepSeek V3", "https://api.siliconflow.cn/v1", "deepseek-ai/DeepSeek-V3"),
+            ModelPreset("Qwen 2.5", "https://api.siliconflow.cn/v1", "Qwen/Qwen2.5-72B-Instruct"),
+            ModelPreset("Kimi K2", "https://api.siliconflow.cn/v1", "moonshotai/Kimi-K2"),
+            ModelPreset("GLM-4", "https://open.bigmodel.cn/api/paas/v4", "glm-4-flash"),
+            ModelPreset("自定义", "", "")
+        )
+
+        data class ModelPreset(val name: String, val baseUrl: String, val model: String)
     }
 }
