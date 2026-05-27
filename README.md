@@ -25,6 +25,7 @@
 | **功能** | "实现 [功能名称]" |
 | **测试** | "跑一下测试：[粘贴日志]" |
 | **发布** | "帮我打包" |
+| **迭代** | "开始迭代"、"开始更新" |
 
 ### 规则文件
 
@@ -34,6 +35,7 @@
   012-architecture-generation.mdc  # 架构生成规则
   031-test-fix-loop.mdc        # 测试修复循环规则
   041-ci-cd-rules.mdc          # CI/PR/发布规则
+  050-auto-iteration.mdc        # 自动化迭代规则
   （基础规则 000 / 400 / android-packaging 已在安装时配置）
 ```
 
@@ -51,9 +53,19 @@ xnotes/
 
 ```
 .ai/
-  prd.md                       # 产品需求文档
-  arch.md                      # 架构文档
+  prd/                         # PRD 需求文档目录
   story-*.story.md             # 故事卡（每个功能一个文件）
+```
+
+### 自动化脚本
+
+```
+*.ps1                          # PowerShell 自动化脚本
+  Auto-Build.ps1              # 独立构建脚本
+  Auto-Publish.ps1             # 完整发布流程
+  Auto-Feature-Verify.ps1      # 功能验证脚本
+  Start-Iteration.ps1           # 迭代触发脚本
+  Start-All-Automation.ps1      # 一键启动所有自动化
 ```
 
 ### CI 状态

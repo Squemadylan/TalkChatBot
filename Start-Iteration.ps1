@@ -213,9 +213,27 @@ function Invoke-Full-Automation {
 
     Write-Log "Starting full automation loop..." "WARN"
 
-    # Stage 1: Test
+    # Stage 1: Feature Verification
+    Write-Log "[Stage 1/5] Running feature verification..." "INFO"
+    $verifyScript = "e:\New\Dubaixia\Auto-Feature-Verify.ps1"
+    if (Test-Path $verifyScript) {
+        try {
+            $verifyOutput = & $verifyScript 2>&1
+            $verifyExit = $LASTEXITCODE
+            $verifyOutput | Select-Object -Last 10 | ForEach-Object { Write-Log $_ "INFO" }
+            if ($verifyExit -eq 0) {
+                Write-Log "Feature verification completed" "SUCCESS"
+            } else {
+                Write-Log "Feature verification found issues" "WARN"
+            }
+        } catch {
+            Write-Log "Feature verification failed: $_" "ERROR"
+        }
+    }
+
+    # Stage 2: Test
     if (-not $SkipBuild) {
-        Write-Log "[Stage 1/4] Running tests..." "INFO"
+        Write-Log "[Stage 2/5] Running tests..." "INFO"
         $testScript = "e:\New\Dubaixia\Auto-Test.ps1"
         if (Test-Path $testScript) {
             try {
@@ -227,8 +245,8 @@ function Invoke-Full-Automation {
         }
     }
 
-    # Stage 2: Build
-    Write-Log "[Stage 2/4] Building APK..." "INFO"
+    # Stage 3: Build
+    Write-Log "[Stage 3/5] Building APK..." "INFO"
     $buildScript = "e:\New\Dubaixia\Auto-Build.ps1"
     if (Test-Path $buildScript) {
         try {
@@ -240,8 +258,8 @@ function Invoke-Full-Automation {
         }
     }
 
-    # Stage 3: Verify APK
-    Write-Log "[Stage 3/4] Verifying APK..." "INFO"
+    # Stage 4: Verify APK
+    Write-Log "[Stage 4/5] Verifying APK..." "INFO"
     $apkPath = "e:\New\Dubaixia\app\build\outputs\apk\debug\app-debug.apk"
     if (Test-Path $apkPath) {
         $apkSize = [math]::Round((Get-Item $apkPath).Length / 1MB, 2)
@@ -251,12 +269,11 @@ function Invoke-Full-Automation {
         return $false
     }
 
-    # Stage 4: Git commit & push
-    Write-Log "[Stage 4/4] Committing changes..." "INFO"
+    # Stage 5: Git commit & push
+    Write-Log "[Stage 5/5] Committing changes..." "INFO"
     $commitScript = "e:\New\Dubaixia\Github-push.ps1"
     if (Test-Path $commitScript) {
         try {
-            # Auto-commit with iteration message
             $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm"
             $message = "迭代: $Title | $timestamp"
             $null = & $commitScript -Message $message 2>&1 | Out-Null

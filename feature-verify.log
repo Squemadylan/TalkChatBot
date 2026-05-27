@@ -1,0 +1,54 @@
+﻿[2026-05-27 11:39:58] [HEADER] ========================================
+[2026-05-27 11:39:58] [HEADER] Feature Verification Started
+[2026-05-27 11:39:58] [HEADER] ========================================
+[2026-05-27 11:39:58] [HEADER] 
+[Check 1/8] Bubble Style Constants (App.kt)
+[2026-05-27 11:39:58] [SUCCESS] [FOUND] CHAT_BUBBLE_STYLE_DEFAULT - App.kt
+[2026-05-27 11:39:58] [SUCCESS] [FOUND] CHAT_BUBBLE_STYLE_COMPACT - App.kt
+[2026-05-27 11:39:58] [SUCCESS] [FOUND] CHAT_BUBBLE_STYLE_ROUNDED - App.kt
+[2026-05-27 11:39:58] [SUCCESS] [FOUND] CHAT_BUBBLE_STYLE_TRANSLUCENT - App.kt
+[2026-05-27 11:39:58] [HEADER] 
+[Check 2/8] Reply Style Constants (App.kt)
+[2026-05-27 11:39:58] [SUCCESS] [FOUND] REPLY_STYLE_STANDARD - App.kt
+[2026-05-27 11:39:58] [SUCCESS] [FOUND] REPLY_STYLE_SHORT - App.kt
+[2026-05-27 11:39:58] [SUCCESS] [FOUND] REPLY_STYLE_DETAILED - App.kt
+[2026-05-27 11:39:58] [HEADER] 
+[Check 3/8] Status Bar Immersive
+[2026-05-27 11:39:58] [SUCCESS] [FOUND] KEY_STATUS_BAR_IMMERSIVE - App.kt
+[2026-05-27 11:39:58] [HEADER] 
+[Check 4/8] Bubble Style UI
+[2026-05-27 11:39:58] [SUCCESS] [FOUND] showBubbleStyleDialog - SettingFragment.kt
+[2026-05-27 11:39:58] [SUCCESS] [FOUND] applyBubbleAppearance - MessageAdapter.kt
+[2026-05-27 11:39:58] [HEADER] 
+[Check 5/8] Reply Style UI
+[2026-05-27 11:39:58] [SUCCESS] [FOUND] showReplyStyleDialog - SettingFragment.kt
+[2026-05-27 11:39:58] [HEADER] 
+[Check 6/8] Coming Soon Text
+[2026-05-27 11:39:58] [ERROR] [MISSING] Coming Soon / Jijiang Zhichi
+[2026-05-27 11:39:58] [HEADER] 
+[Check 7/8] MessageAdapter Bubble Implementation
+[2026-05-27 11:39:58] [SUCCESS] [FOUND] bubbleStyle parameter - ChatFragment.kt
+[2026-05-27 11:39:58] [HEADER] 
+[Check 8/8] Build Verification
+[2026-05-27 11:39:58] [INFO] JAVA_HOME: C:\Program Files\Android\Android Studio\jbr
+[2026-05-27 11:39:58] [INFO] Running gradlew assembleDebug...
+[2026-05-27 11:40:06] [INFO] > Task :app:stripDebugDebugSymbols NO-SOURCE
+[2026-05-27 11:40:06] [INFO] > Task :app:validateSigningDebug UP-TO-DATE
+[2026-05-27 11:40:06] [INFO] > Task :app:writeDebugAppMetadata UP-TO-DATE
+[2026-05-27 11:40:06] [INFO] > Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+[2026-05-27 11:40:06] [INFO] > Task :app:packageDebug UP-TO-DATE
+[2026-05-27 11:40:06] [INFO] > Task :app:createDebugApkListingFileRedirect UP-TO-DATE
+[2026-05-27 11:40:06] [INFO] > Task :app:assembleDebug UP-TO-DATE
+[2026-05-27 11:40:06] [INFO] 
+[2026-05-27 11:40:06] [INFO] BUILD SUCCESSFUL in 7s
+[2026-05-27 11:40:06] [INFO] 39 actionable tasks: 1 executed, 38 up-to-date
+[2026-05-27 11:40:06] [SUCCESS] Build SUCCESS (8.0069207s)
+[2026-05-27 11:40:06] [SUCCESS] APK: E:\New\Dubaixia\app\build\outputs\apk\debug\app-debug.apk
+[2026-05-27 11:40:06] [SUCCESS] Size: 7.95 MB
+[2026-05-27 11:40:06] [HEADER] 
+========================================
+[2026-05-27 11:40:06] [HEADER] VERIFICATION SUMMARY
+[2026-05-27 11:40:06] [HEADER] ========================================
+[2026-05-27 11:40:06] [WARN] Code Checks: 12 / 13 passed
+[2026-05-27 11:40:06] [SUCCESS] Build: SUCCESS
+[2026-05-27 11:40:06] [HEADER] ========================================
