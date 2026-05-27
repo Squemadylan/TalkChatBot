@@ -271,6 +271,25 @@ object LongTermMemoryManager {
         }
     }
 
+    suspend fun deleteAllMemories(context: Context) {
+        withContext(Dispatchers.IO) {
+            try {
+                val memoryDir = File(context.filesDir, MEMORY_DIR)
+                if (memoryDir.exists()) {
+                    memoryDir.listFiles()?.forEach { file ->
+                        if (file.isFile && file.name.startsWith(MEMORY_FILE_PREFIX)) {
+                            file.delete()
+                        }
+                    }
+                }
+                getPrefs(context).edit().clear().apply()
+                Log.d(TAG, "Deleted all long-term memories")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to delete all memories", e)
+            }
+        }
+    }
+
     suspend fun generateAndSaveMemory(
         context: Context,
         characterId: Long,

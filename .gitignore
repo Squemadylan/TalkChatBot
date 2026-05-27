@@ -21,3 +21,13 @@ tmp-memory*.png
 # Built artifacts (use CI or manual upload for APK/AAB)
 *.apk
 *.aab
+
+# Private individual user cursor rules
+.cursor/rules/_*.mdc
+
+# Documentation and templates
+xnotes/
+docs/
+# Exception: keep tracked workflow templates
+!docs/ai-workflow/
+docs/ai-workflow/**

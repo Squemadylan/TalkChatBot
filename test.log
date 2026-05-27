@@ -1,0 +1,300 @@
+﻿[2026-05-27 10:53:16] [INFO] ========================================
+[2026-05-27 10:53:16] [INFO] Android Automated Test Started
+[2026-05-27 10:53:16] [INFO] Project Dir: e:\New\Dubaixia
+[2026-05-27 10:53:16] [INFO] ========================================
+[2026-05-27 10:53:16] [INFO] JAVA_HOME set to: C:\Program Files\Android\Android Studio\jbr
+[2026-05-27 10:53:16] [INFO] Starting test execution...
+[2026-05-27 10:53:16] [INFO] Executing: cd "e:\New\Dubaixia"; .\gradlew test 2>&1
+[2026-05-27 10:53:52] [INFO] To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+[2026-05-27 10:53:52] [INFO] Daemon will be stopped at the end of the build 
+[2026-05-27 10:53:52] [INFO] 
+[2026-05-27 10:53:52] [INFO] > Configure project :app
+[2026-05-27 10:53:52] [INFO] WARNING: The option 'android.enableBuildCache' is deprecated.
+[2026-05-27 10:53:52] [INFO] The current default is 'false'.
+[2026-05-27 10:53:52] [INFO] It was removed in version 7.0 of the Android Gradle plugin.
+[2026-05-27 10:53:52] [INFO] The Android-specific build caches were superseded by the Gradle build cache (https://docs.gradle.org/current/userguide/build_cache.html).
+[2026-05-27 10:53:52] [INFO] 
+[2026-05-27 10:53:52] [INFO] > Task :app:checkKotlinGradlePluginConfigurationErrors
+[2026-05-27 10:53:52] [INFO] > Task :app:preBuild UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:preDebugBuild UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:generateDebugResValues UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:generateDebugResources UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:mergeDebugResources UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:packageDebugResources UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:parseDebugLocalResources UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:dataBindingGenBaseClassesDebug UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:generateDebugBuildConfig UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:checkDebugAarMetadata UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:mapDebugSourceSetPaths UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:extractDeepLinksDebug UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:processDebugMainManifest UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:processDebugManifest UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:processDebugManifestForPackage UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:processDebugResources UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:kaptGenerateStubsDebugKotlin UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:kaptDebugKotlin UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:compileDebugKotlin UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:javaPreCompileDebug UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:compileDebugJavaWithJavac UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:preDebugUnitTestBuild UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:processDebugJavaRes UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:javaPreCompileDebugUnitTest
+[2026-05-27 10:53:52] [INFO] > Task :app:buildKotlinToolingMetadata
+[2026-05-27 10:53:52] [INFO] > Task :app:bundleDebugClassesToCompileJar
+[2026-05-27 10:53:52] [INFO] > Task :app:bundleDebugClassesToRuntimeJar
+[2026-05-27 10:53:52] [INFO] > Task :app:kaptGenerateStubsDebugUnitTestKotlin
+[2026-05-27 10:53:52] [INFO] > Task :app:preReleaseBuild UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:generateReleaseResValues
+[2026-05-27 10:53:52] [INFO] > Task :app:dataBindingMergeDependencyArtifactsRelease
+[2026-05-27 10:53:52] [INFO] > Task :app:generateReleaseResources
+[2026-05-27 10:53:52] [INFO] > Task :app:kaptDebugUnitTestKotlin
+[2026-05-27 10:53:52] [INFO] > Task :app:compileDebugUnitTestKotlin NO-SOURCE
+[2026-05-27 10:53:52] [INFO] > Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+[2026-05-27 10:53:52] [INFO] > Task :app:processDebugUnitTestJavaRes NO-SOURCE
+[2026-05-27 10:53:52] [INFO] > Task :app:testDebugUnitTest NO-SOURCE
+[2026-05-27 10:53:52] [INFO] > Task :app:packageReleaseResources
+[2026-05-27 10:53:52] [INFO] > Task :app:generateReleaseBuildConfig
+[2026-05-27 10:53:52] [INFO] > Task :app:mapReleaseSourceSetPaths
+[2026-05-27 10:53:52] [INFO] > Task :app:checkReleaseAarMetadata
+[2026-05-27 10:53:52] [INFO] > Task :app:createReleaseCompatibleScreenManifests
+[2026-05-27 10:53:52] [INFO] > Task :app:extractDeepLinksRelease
+[2026-05-27 10:53:52] [INFO] > Task :app:parseReleaseLocalResources
+[2026-05-27 10:53:52] [INFO] > Task :app:processReleaseMainManifest
+[2026-05-27 10:53:52] [INFO] > Task :app:processReleaseManifest
+[2026-05-27 10:53:52] [INFO] > Task :app:preReleaseUnitTestBuild UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] > Task :app:javaPreCompileRelease
+[2026-05-27 10:53:52] [INFO] > Task :app:processReleaseManifestForPackage
+[2026-05-27 10:53:52] [INFO] > Task :app:javaPreCompileReleaseUnitTest
+[2026-05-27 10:53:52] [INFO] > Task :app:mergeReleaseResources
+[2026-05-27 10:53:52] [INFO] > Task :app:dataBindingGenBaseClassesRelease
+[2026-05-27 10:53:52] [INFO] > Task :app:processReleaseResources
+[2026-05-27 10:53:52] [INFO] > Task :app:kaptGenerateStubsReleaseKotlin
+[2026-05-27 10:53:52] [INFO] > Task :app:kaptReleaseKotlin
+[2026-05-27 10:53:52] [INFO] 
+[2026-05-27 10:53:52] [INFO] > Task :app:compileReleaseKotlin
+[2026-05-27 10:53:52] [INFO] w: file:///E:/New/Dubaixia/app/src/main/java/com/example/chatbot/database/AppDatabase.kt:23:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+[2026-05-27 10:53:52] [INFO] w: file:///E:/New/Dubaixia/app/src/main/java/com/example/chatbot/database/AppDatabase.kt:31:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+[2026-05-27 10:53:52] [INFO] w: file:///E:/New/Dubaixia/app/src/main/java/com/example/chatbot/ui/common/InputDialog.kt:103:44 'SOFT_INPUT_ADJUST_RESIZE: Int' is deprecated. Deprecated in Java
+[2026-05-27 10:53:52] [INFO] w: file:///E:/New/Dubaixia/app/src/main/java/com/example/chatbot/viewmodel/ChatViewModel.kt:268:66 Parameter 'characterPrompt' is never used
+[2026-05-27 10:53:52] [INFO] w: file:///E:/New/Dubaixia/app/src/main/java/com/example/chatbot/viewmodel/ChatViewModel.kt:268:91 Parameter 'context' is never used
+[2026-05-27 10:53:52] [INFO] 
+[2026-05-27 10:53:52] [INFO] > Task :app:compileReleaseJavaWithJavac
+[2026-05-27 10:53:52] [INFO] > Task :app:processReleaseJavaRes
+[2026-05-27 10:53:52] [INFO] > Task :app:bundleReleaseClassesToRuntimeJar
+[2026-05-27 10:53:52] [INFO] > Task :app:bundleReleaseClassesToCompileJar
+[2026-05-27 10:53:52] [INFO] > Task :app:kaptGenerateStubsReleaseUnitTestKotlin
+[2026-05-27 10:53:52] [INFO] > Task :app:kaptReleaseUnitTestKotlin
+[2026-05-27 10:53:52] [INFO] > Task :app:compileReleaseUnitTestKotlin NO-SOURCE
+[2026-05-27 10:53:52] [INFO] > Task :app:compileReleaseUnitTestJavaWithJavac NO-SOURCE
+[2026-05-27 10:53:52] [INFO] > Task :app:processReleaseUnitTestJavaRes NO-SOURCE
+[2026-05-27 10:53:52] [INFO] > Task :app:testReleaseUnitTest NO-SOURCE
+[2026-05-27 10:53:52] [INFO] > Task :app:test UP-TO-DATE
+[2026-05-27 10:53:52] [INFO] 
+[2026-05-27 10:53:52] [INFO] BUILD SUCCESSFUL in 35s
+[2026-05-27 10:53:52] [INFO] 54 actionable tasks: 33 executed, 21 up-to-date
+[2026-05-27 10:53:52] [SUCCESS] Test SUCCESS! Time: 36.7386492s
+[2026-05-27 10:53:52] [INFO] ========================================
+[2026-05-27 10:53:52] [SUCCESS] Test completed
+[2026-05-27 10:53:52] [INFO] ========================================
+[2026-05-27 11:16:01] [INFO] ========================================
+[2026-05-27 11:16:01] [INFO] Android Automated Test Started
+[2026-05-27 11:16:01] [INFO] Project Dir: e:\New\Dubaixia
+[2026-05-27 11:16:01] [INFO] ========================================
+[2026-05-27 11:16:01] [INFO] JAVA_HOME set to: C:\Program Files\Android\Android Studio\jbr
+[2026-05-27 11:16:01] [INFO] Starting test execution...
+[2026-05-27 11:16:01] [INFO] Executing: cd "e:\New\Dubaixia"; .\gradlew test 2>&1
+[2026-05-27 11:16:36] [INFO] To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+[2026-05-27 11:16:36] [INFO] Daemon will be stopped at the end of the build 
+[2026-05-27 11:16:36] [INFO] 
+[2026-05-27 11:16:36] [INFO] > Configure project :app
+[2026-05-27 11:16:36] [INFO] WARNING: The option 'android.enableBuildCache' is deprecated.
+[2026-05-27 11:16:36] [INFO] The current default is 'false'.
+[2026-05-27 11:16:36] [INFO] It was removed in version 7.0 of the Android Gradle plugin.
+[2026-05-27 11:16:36] [INFO] The Android-specific build caches were superseded by the Gradle build cache (https://docs.gradle.org/current/userguide/build_cache.html).
+[2026-05-27 11:16:36] [INFO] 
+[2026-05-27 11:16:36] [INFO] > Task :app:checkKotlinGradlePluginConfigurationErrors
+[2026-05-27 11:16:36] [INFO] > Task :app:preBuild UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:preDebugBuild UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:generateDebugResValues UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:generateDebugResources UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:mergeDebugResources UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:packageDebugResources UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:parseDebugLocalResources UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:dataBindingGenBaseClassesDebug UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:generateDebugBuildConfig UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:checkDebugAarMetadata UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:mapDebugSourceSetPaths UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:extractDeepLinksDebug UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:processDebugMainManifest UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:processDebugManifest UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:processDebugManifestForPackage UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:processDebugResources UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:kaptGenerateStubsDebugKotlin UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:kaptDebugKotlin UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:compileDebugKotlin UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:javaPreCompileDebug UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:compileDebugJavaWithJavac UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:preDebugUnitTestBuild UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:processDebugJavaRes UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:javaPreCompileDebugUnitTest
+[2026-05-27 11:16:36] [INFO] > Task :app:buildKotlinToolingMetadata
+[2026-05-27 11:16:36] [INFO] > Task :app:preReleaseBuild UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:bundleDebugClassesToCompileJar
+[2026-05-27 11:16:36] [INFO] > Task :app:bundleDebugClassesToRuntimeJar
+[2026-05-27 11:16:36] [INFO] > Task :app:dataBindingMergeDependencyArtifactsRelease
+[2026-05-27 11:16:36] [INFO] > Task :app:kaptGenerateStubsDebugUnitTestKotlin
+[2026-05-27 11:16:36] [INFO] > Task :app:generateReleaseResValues
+[2026-05-27 11:16:36] [INFO] > Task :app:generateReleaseResources
+[2026-05-27 11:16:36] [INFO] > Task :app:kaptDebugUnitTestKotlin
+[2026-05-27 11:16:36] [INFO] > Task :app:compileDebugUnitTestKotlin NO-SOURCE
+[2026-05-27 11:16:36] [INFO] > Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+[2026-05-27 11:16:36] [INFO] > Task :app:processDebugUnitTestJavaRes NO-SOURCE
+[2026-05-27 11:16:36] [INFO] > Task :app:testDebugUnitTest NO-SOURCE
+[2026-05-27 11:16:36] [INFO] > Task :app:packageReleaseResources
+[2026-05-27 11:16:36] [INFO] > Task :app:generateReleaseBuildConfig
+[2026-05-27 11:16:36] [INFO] > Task :app:mapReleaseSourceSetPaths
+[2026-05-27 11:16:36] [INFO] > Task :app:checkReleaseAarMetadata
+[2026-05-27 11:16:36] [INFO] > Task :app:createReleaseCompatibleScreenManifests
+[2026-05-27 11:16:36] [INFO] > Task :app:extractDeepLinksRelease
+[2026-05-27 11:16:36] [INFO] > Task :app:parseReleaseLocalResources
+[2026-05-27 11:16:36] [INFO] > Task :app:processReleaseMainManifest
+[2026-05-27 11:16:36] [INFO] > Task :app:processReleaseManifest
+[2026-05-27 11:16:36] [INFO] > Task :app:preReleaseUnitTestBuild UP-TO-DATE
+[2026-05-27 11:16:36] [INFO] > Task :app:javaPreCompileRelease
+[2026-05-27 11:16:36] [INFO] > Task :app:processReleaseManifestForPackage
+[2026-05-27 11:16:36] [INFO] > Task :app:javaPreCompileReleaseUnitTest
+[2026-05-27 11:16:36] [INFO] > Task :app:mergeReleaseResources
+[2026-05-27 11:16:36] [INFO] > Task :app:dataBindingGenBaseClassesRelease
+[2026-05-27 11:16:36] [INFO] > Task :app:processReleaseResources
+[2026-05-27 11:16:36] [INFO] > Task :app:kaptGenerateStubsReleaseKotlin
+[2026-05-27 11:16:36] [INFO] > Task :app:kaptReleaseKotlin
+[2026-05-27 11:16:36] [INFO] 
+[2026-05-27 11:16:36] [INFO] > Task :app:compileReleaseKotlin
+[2026-05-27 11:16:36] [INFO] w: file:///E:/New/Dubaixia/app/src/main/java/com/example/chatbot/database/AppDatabase.kt:23:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+[2026-05-27 11:16:36] [INFO] w: file:///E:/New/Dubaixia/app/src/main/java/com/example/chatbot/database/AppDatabase.kt:31:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+[2026-05-27 11:16:36] [INFO] w: file:///E:/New/Dubaixia/app/src/main/java/com/example/chatbot/ui/common/InputDialog.kt:103:44 'SOFT_INPUT_ADJUST_RESIZE: Int' is deprecated. Deprecated in Java
+[2026-05-27 11:16:36] [INFO] w: file:///E:/New/Dubaixia/app/src/main/java/com/example/chatbot/viewmodel/ChatViewModel.kt:268:66 Parameter 'characterPrompt' is never used
+[2026-05-27 11:16:37] [INFO] w: file:///E:/New/Dubaixia/app/src/main/java/com/example/chatbot/viewmodel/ChatViewModel.kt:268:91 Parameter 'context' is never used
+[2026-05-27 11:16:37] [INFO] 
+[2026-05-27 11:16:37] [INFO] > Task :app:compileReleaseJavaWithJavac
+[2026-05-27 11:16:37] [INFO] > Task :app:processReleaseJavaRes
+[2026-05-27 11:16:37] [INFO] > Task :app:bundleReleaseClassesToRuntimeJar
+[2026-05-27 11:16:37] [INFO] > Task :app:bundleReleaseClassesToCompileJar
+[2026-05-27 11:16:37] [INFO] > Task :app:kaptGenerateStubsReleaseUnitTestKotlin
+[2026-05-27 11:16:37] [INFO] > Task :app:kaptReleaseUnitTestKotlin
+[2026-05-27 11:16:37] [INFO] > Task :app:compileReleaseUnitTestKotlin NO-SOURCE
+[2026-05-27 11:16:37] [INFO] > Task :app:compileReleaseUnitTestJavaWithJavac NO-SOURCE
+[2026-05-27 11:16:37] [INFO] > Task :app:processReleaseUnitTestJavaRes NO-SOURCE
+[2026-05-27 11:16:37] [INFO] > Task :app:testReleaseUnitTest NO-SOURCE
+[2026-05-27 11:16:37] [INFO] > Task :app:test UP-TO-DATE
+[2026-05-27 11:16:37] [INFO] 
+[2026-05-27 11:16:37] [INFO] BUILD SUCCESSFUL in 35s
+[2026-05-27 11:16:37] [INFO] 54 actionable tasks: 33 executed, 21 up-to-date
+[2026-05-27 11:16:37] [SUCCESS] Test SUCCESS! Time: 35.9640076s
+[2026-05-27 11:16:37] [INFO] ========================================
+[2026-05-27 11:16:37] [SUCCESS] Test completed
+[2026-05-27 11:16:37] [INFO] ========================================
+[2026-05-27 11:24:09] [INFO] ========================================
+[2026-05-27 11:24:09] [INFO] Android Automated Test Started
+[2026-05-27 11:24:09] [INFO] Project Dir: e:\New\Dubaixia
+[2026-05-27 11:24:09] [INFO] ========================================
+[2026-05-27 11:24:09] [INFO] JAVA_HOME set to: C:\Program Files\Android\Android Studio\jbr
+[2026-05-27 11:24:09] [INFO] Starting test execution...
+[2026-05-27 11:24:09] [INFO] Executing: cd "e:\New\Dubaixia"; .\gradlew test 2>&1
+[2026-05-27 11:24:46] [INFO] To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+[2026-05-27 11:24:46] [INFO] Daemon will be stopped at the end of the build 
+[2026-05-27 11:24:46] [INFO] 
+[2026-05-27 11:24:46] [INFO] > Configure project :app
+[2026-05-27 11:24:46] [INFO] WARNING: The option 'android.enableBuildCache' is deprecated.
+[2026-05-27 11:24:46] [INFO] The current default is 'false'.
+[2026-05-27 11:24:46] [INFO] It was removed in version 7.0 of the Android Gradle plugin.
+[2026-05-27 11:24:46] [INFO] The Android-specific build caches were superseded by the Gradle build cache (https://docs.gradle.org/current/userguide/build_cache.html).
+[2026-05-27 11:24:46] [INFO] 
+[2026-05-27 11:24:46] [INFO] > Task :app:checkKotlinGradlePluginConfigurationErrors
+[2026-05-27 11:24:46] [INFO] > Task :app:preBuild UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:preDebugBuild UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:generateDebugResValues UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:generateDebugResources UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:mergeDebugResources UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:packageDebugResources UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:parseDebugLocalResources UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:dataBindingGenBaseClassesDebug UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:generateDebugBuildConfig UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:checkDebugAarMetadata UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:mapDebugSourceSetPaths UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:extractDeepLinksDebug UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:processDebugMainManifest UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:processDebugManifest UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:processDebugManifestForPackage UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:processDebugResources UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:kaptGenerateStubsDebugKotlin UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:kaptDebugKotlin UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:compileDebugKotlin UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:javaPreCompileDebug UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:compileDebugJavaWithJavac UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:preDebugUnitTestBuild UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:processDebugJavaRes UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:javaPreCompileDebugUnitTest
+[2026-05-27 11:24:46] [INFO] > Task :app:buildKotlinToolingMetadata
+[2026-05-27 11:24:46] [INFO] > Task :app:preReleaseBuild UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:bundleDebugClassesToRuntimeJar
+[2026-05-27 11:24:46] [INFO] > Task :app:bundleDebugClassesToCompileJar
+[2026-05-27 11:24:46] [INFO] > Task :app:dataBindingMergeDependencyArtifactsRelease
+[2026-05-27 11:24:46] [INFO] > Task :app:kaptGenerateStubsDebugUnitTestKotlin
+[2026-05-27 11:24:46] [INFO] > Task :app:generateReleaseResValues
+[2026-05-27 11:24:46] [INFO] > Task :app:generateReleaseResources
+[2026-05-27 11:24:46] [INFO] > Task :app:kaptDebugUnitTestKotlin
+[2026-05-27 11:24:46] [INFO] > Task :app:compileDebugUnitTestKotlin NO-SOURCE
+[2026-05-27 11:24:46] [INFO] > Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+[2026-05-27 11:24:46] [INFO] > Task :app:processDebugUnitTestJavaRes NO-SOURCE
+[2026-05-27 11:24:46] [INFO] > Task :app:testDebugUnitTest NO-SOURCE
+[2026-05-27 11:24:46] [INFO] > Task :app:packageReleaseResources
+[2026-05-27 11:24:46] [INFO] > Task :app:generateReleaseBuildConfig
+[2026-05-27 11:24:46] [INFO] > Task :app:mapReleaseSourceSetPaths
+[2026-05-27 11:24:46] [INFO] > Task :app:checkReleaseAarMetadata
+[2026-05-27 11:24:46] [INFO] > Task :app:createReleaseCompatibleScreenManifests
+[2026-05-27 11:24:46] [INFO] > Task :app:extractDeepLinksRelease
+[2026-05-27 11:24:46] [INFO] > Task :app:parseReleaseLocalResources
+[2026-05-27 11:24:46] [INFO] > Task :app:processReleaseMainManifest
+[2026-05-27 11:24:46] [INFO] > Task :app:processReleaseManifest
+[2026-05-27 11:24:46] [INFO] > Task :app:preReleaseUnitTestBuild UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] > Task :app:javaPreCompileRelease
+[2026-05-27 11:24:46] [INFO] > Task :app:processReleaseManifestForPackage
+[2026-05-27 11:24:46] [INFO] > Task :app:javaPreCompileReleaseUnitTest
+[2026-05-27 11:24:46] [INFO] > Task :app:mergeReleaseResources
+[2026-05-27 11:24:46] [INFO] > Task :app:dataBindingGenBaseClassesRelease
+[2026-05-27 11:24:46] [INFO] > Task :app:processReleaseResources
+[2026-05-27 11:24:46] [INFO] > Task :app:kaptGenerateStubsReleaseKotlin
+[2026-05-27 11:24:46] [INFO] > Task :app:kaptReleaseKotlin
+[2026-05-27 11:24:46] [INFO] 
+[2026-05-27 11:24:46] [INFO] > Task :app:compileReleaseKotlin
+[2026-05-27 11:24:46] [INFO] w: file:///E:/New/Dubaixia/app/src/main/java/com/example/chatbot/database/AppDatabase.kt:23:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+[2026-05-27 11:24:46] [INFO] w: file:///E:/New/Dubaixia/app/src/main/java/com/example/chatbot/database/AppDatabase.kt:31:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+[2026-05-27 11:24:46] [INFO] w: file:///E:/New/Dubaixia/app/src/main/java/com/example/chatbot/ui/common/InputDialog.kt:103:44 'SOFT_INPUT_ADJUST_RESIZE: Int' is deprecated. Deprecated in Java
+[2026-05-27 11:24:46] [INFO] w: file:///E:/New/Dubaixia/app/src/main/java/com/example/chatbot/viewmodel/ChatViewModel.kt:268:66 Parameter 'characterPrompt' is never used
+[2026-05-27 11:24:46] [INFO] w: file:///E:/New/Dubaixia/app/src/main/java/com/example/chatbot/viewmodel/ChatViewModel.kt:268:91 Parameter 'context' is never used
+[2026-05-27 11:24:46] [INFO] 
+[2026-05-27 11:24:46] [INFO] > Task :app:compileReleaseJavaWithJavac
+[2026-05-27 11:24:46] [INFO] > Task :app:processReleaseJavaRes
+[2026-05-27 11:24:46] [INFO] > Task :app:bundleReleaseClassesToRuntimeJar
+[2026-05-27 11:24:46] [INFO] > Task :app:bundleReleaseClassesToCompileJar
+[2026-05-27 11:24:46] [INFO] > Task :app:kaptGenerateStubsReleaseUnitTestKotlin
+[2026-05-27 11:24:46] [INFO] > Task :app:kaptReleaseUnitTestKotlin
+[2026-05-27 11:24:46] [INFO] > Task :app:compileReleaseUnitTestKotlin NO-SOURCE
+[2026-05-27 11:24:46] [INFO] > Task :app:compileReleaseUnitTestJavaWithJavac NO-SOURCE
+[2026-05-27 11:24:46] [INFO] > Task :app:processReleaseUnitTestJavaRes NO-SOURCE
+[2026-05-27 11:24:46] [INFO] > Task :app:testReleaseUnitTest NO-SOURCE
+[2026-05-27 11:24:46] [INFO] > Task :app:test UP-TO-DATE
+[2026-05-27 11:24:46] [INFO] 
+[2026-05-27 11:24:46] [INFO] BUILD SUCCESSFUL in 36s
+[2026-05-27 11:24:46] [INFO] 54 actionable tasks: 33 executed, 21 up-to-date
+[2026-05-27 11:24:46] [SUCCESS] Test SUCCESS! Time: 37.5707547s
+[2026-05-27 11:24:46] [INFO] ========================================
+[2026-05-27 11:24:46] [SUCCESS] Test completed
+[2026-05-27 11:24:46] [INFO] ========================================

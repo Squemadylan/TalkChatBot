@@ -84,6 +84,7 @@ object BackupManager {
         val prompt: String,
         val tags: String,
         val openingGreeting: String,
+        val enableLongTermMemory: Boolean = false,
         val createdAt: Long
     )
 
@@ -108,11 +109,12 @@ object BackupManager {
             prompt = prompt,
             tags = tags,
             openingGreeting = openingGreeting,
+            enableLongTermMemory = enableLongTermMemory,
             createdAt = createdAt
         )
     }
 
-    private fun CharacterBackup.toCharacter(): Character {
+    private fun CharacterBackup.toCharacter(enableMemory: Boolean = enableLongTermMemory): Character {
         return Character(
             id = 0,
             name = name,
@@ -121,6 +123,7 @@ object BackupManager {
             prompt = prompt,
             tags = tags,
             openingGreeting = openingGreeting,
+            enableLongTermMemory = enableMemory,
             createdAt = createdAt
         )
     }
@@ -210,10 +213,7 @@ object BackupManager {
             }
             
             if (character.enableLongTermMemory) {
-                val memoryFile = File(
-                    context.filesDir,
-                    "long_term_memory/memory_${character.id}.md"
-                )
+                val memoryFile = File(LongTermMemoryManager.getMemoryFilePath(context, character.id))
                 if (memoryFile.exists()) {
                     zipOut.putNextEntry(ZipEntry("$MEMORIES_DIR/memory_${character.id}.md"))
                     FileInputStream(memoryFile).use { it.copyTo(zipOut) }
@@ -342,7 +342,11 @@ object BackupManager {
             var userProfileRestored = false
             var apiConfigRestored = false
             val avatarDir = File(context.filesDir, "restored_avatars").apply { mkdirs() }
-            val memoryDir = File(context.filesDir, "long_term_memory").apply { mkdirs() }
+            val memoryDir = File(context.cacheDir, "restore_memories_${System.currentTimeMillis()}")
+                .apply {
+                    deleteRecursively()
+                    mkdirs()
+                }
 
             // 先解压 zip 内 avatars/ 和 memories/ 下全部文件
             ZipInputStream(FileInputStream(backupFile)).use { zipIn ->
@@ -400,8 +404,17 @@ object BackupManager {
                                 }
                             }
 
-                            val newCharacter = charBackup.toCharacter().copy(avatar = avatarPath)
-                            characterDao.insertCharacter(newCharacter)
+                            val hasMemoryBackup = hasCharacterMemory(memoryDir, charBackup.id)
+                            val newCharacter = charBackup
+                                .toCharacter(enableMemory = charBackup.enableLongTermMemory || hasMemoryBackup)
+                                .copy(avatar = avatarPath)
+                            val newCharacterId = characterDao.insertCharacter(newCharacter)
+                            restoreCharacterMemory(
+                                context = context,
+                                memoryDir = memoryDir,
+                                oldCharacterId = charBackup.id,
+                                newCharacterId = newCharacterId
+                            )
                             characterCount++
                         }
 
@@ -422,9 +435,31 @@ object BackupManager {
 
             Result.success(
                 RestoreSummary(characterCount, userProfileRestored, apiConfigRestored)
-            )
+            ).also {
+                memoryDir.deleteRecursively()
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    private fun hasCharacterMemory(memoryDir: File, oldCharacterId: Long): Boolean {
+        val oldMemory = File(memoryDir, "memory_$oldCharacterId.md")
+        return oldMemory.exists() && oldMemory.length() > 0L
+    }
+
+    private suspend fun restoreCharacterMemory(
+        context: Context,
+        memoryDir: File,
+        oldCharacterId: Long,
+        newCharacterId: Long
+    ) {
+        val oldMemory = File(memoryDir, "memory_$oldCharacterId.md")
+        if (!oldMemory.exists() || oldMemory.length() <= 0L) return
+        LongTermMemoryManager.importMemory(
+            context = context,
+            characterId = newCharacterId,
+            content = oldMemory.readText()
+        )
     }
 }

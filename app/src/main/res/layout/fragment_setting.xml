@@ -346,9 +346,10 @@
                         android:textSize="@dimen/kd_font_middle"/>
 
                     <TextView
+                        android:id="@+id/tvBubbleSummary"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="透明度、字号和高亮颜色"
+                        android:text="当前：默认"
                         android:textColor="@color/text_secondary"
                         android:textSize="@dimen/kd_font_small"/>
 
@@ -556,9 +557,10 @@
                         android:textSize="@dimen/kd_font_middle"/>
 
                     <TextView
+                        android:id="@+id/tvReplySummary"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="已关闭"
+                        android:text="标准：自然平衡，不额外约束"
                         android:textColor="@color/text_secondary"
                         android:textSize="@dimen/kd_font_small"/>
 
@@ -628,7 +630,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:visibility="gone"
                 android:minHeight="@dimen/kd_touch_min"
                 android:padding="@dimen/kd_space_400"
                 android:background="@drawable/bg_input_radius">
@@ -655,9 +656,10 @@
                         android:textSize="@dimen/kd_font_middle"/>
 
                     <TextView
+                        android:id="@+id/tvStatusBarSummary"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="已开启·自定义显示内容"
+                        android:text="默认：保留系统状态栏间距，图标跟随主题"
                         android:textColor="@color/text_secondary"
                         android:textSize="@dimen/kd_font_small"/>
 

@@ -91,14 +91,38 @@ class ChatViewModel(
 
     fun setActiveCharacterId(id: Long) {
         activeCharacterId.value = id
+        if (id > 0L) {
+            cleanupStaleAssistantPlaceholders(id)
+        }
+    }
+
+    private fun cleanupStaleAssistantPlaceholders(characterId: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                messageRepository.markStaleStreamingMessagesFailed(
+                    characterId = characterId,
+                    activeMessageId = activeStreamingAssistantMessageId
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to cleanup stale assistant placeholders", e)
+            }
+        }
     }
 
     private var lastNetworkCheck: Long = 0
     private var lastNetworkState: Boolean = true
 
-    fun deleteAllMessages() {
+    fun deleteAllMessages(context: Context? = null) {
+        val appCtx = context?.applicationContext
         viewModelScope.launch(Dispatchers.IO) {
             messageRepository.deleteAllMessages()
+            appCtx?.let {
+                try {
+                    LongTermMemoryManager.deleteAllMemories(it)
+                } catch (e: Exception) {
+                    Log.e("ChatViewModel", "Failed to delete all memories", e)
+                }
+            }
         }
     }
 
@@ -112,6 +136,24 @@ class ChatViewModel(
                     Log.e("ChatViewModel", "Failed to delete memory", e)
                 }
             }
+        }
+    }
+
+    fun deleteChatMessagesOnlyForCharacter(characterId: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            messageRepository.deleteMessagesByCharacterId(characterId)
+        }
+    }
+
+    fun deleteLongTermMemoryForCharacter(characterId: Long, context: Context? = null) {
+        val appCtx = context?.applicationContext
+        viewModelScope.launch(Dispatchers.IO) {
+            if (appCtx == null) {
+                _errorMessage.postValue("应用状态异常，请稍后重试")
+                return@launch
+            }
+            LongTermMemoryManager.deleteMemory(appCtx, characterId)
+            _errorMessage.postValue("长久记忆已删除")
         }
     }
 
@@ -132,6 +174,74 @@ class ChatViewModel(
                 } catch (e: Exception) {
                     Log.e("ChatViewModel", "Failed to delete memory", e)
                 }
+            }
+        }
+    }
+
+    fun saveLongTermMemoryNow(characterId: Long, context: Context? = null) {
+        val appCtx = context?.applicationContext
+        viewModelScope.launch(Dispatchers.IO) {
+            if (activeStreamingAssistantMessageId > 0L) {
+                _errorMessage.postValue("当前回复还没结束，请稍后再保存长期记忆")
+                return@launch
+            }
+
+            _isLoading.postValue(true)
+            _errorMessage.postValue("正在手动保存长期记忆...")
+            try {
+                if (!isNetworkAvailable(appCtx)) {
+                    _errorMessage.postValue("网络不可用，请检查网络连接")
+                    return@launch
+                }
+
+                if (appCtx == null) {
+                    _errorMessage.postValue("应用状态异常，请稍后重试")
+                    return@launch
+                }
+
+                val character = characterRepository.getCharacterById(characterId)
+                if (character == null) {
+                    _errorMessage.postValue("角色不存在，无法保存长期记忆")
+                    return@launch
+                }
+                if (!character.enableLongTermMemory) {
+                    _errorMessage.postValue("请先在角色编辑中开启长期记忆")
+                    return@launch
+                }
+
+                val config = apiConfigRepository.getApiConfig()
+                if (config == null || config.baseUrl.isBlank() || config.apiKey.isBlank() || config.model.isBlank()) {
+                    _errorMessage.postValue("请先配置大模型API")
+                    return@launch
+                }
+                if (!isValidUrl(config.baseUrl)) {
+                    _errorMessage.postValue("API地址格式不正确")
+                    return@launch
+                }
+
+                val allMessages = messageRepository.getAllMessagesByCharacterId(characterId)
+                if (allMessages.size < MIN_MESSAGES_FOR_MANUAL_MEMORY) {
+                    _errorMessage.postValue("对话太少，至少需要 $MIN_MESSAGES_FOR_MANUAL_MEMORY 条消息再保存长期记忆")
+                    return@launch
+                }
+
+                val result = LongTermMemoryManager.forceRegenerateMemory(
+                    context = appCtx,
+                    characterId = characterId,
+                    messages = allMessages,
+                    apiConfig = config
+                )
+                val memory = result.getOrNull().orEmpty()
+                if (result.isSuccess && memory.isNotBlank()) {
+                    _errorMessage.postValue("长期记忆已手动保存")
+                } else {
+                    _errorMessage.postValue("长期记忆生成失败，请稍后重试")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Manual long-term memory save failed", e)
+                _errorMessage.postValue("长期记忆保存失败：${e.message}")
+            } finally {
+                _isLoading.postValue(false)
             }
         }
     }
@@ -194,6 +304,8 @@ class ChatViewModel(
 
             val prefs = appCtx?.getSharedPreferences(App.PREFS_NAME, Context.MODE_PRIVATE)
             val strength = prefs?.getInt(App.KEY_MEMORY_CONTEXT_COUNT, 5)?.coerceIn(0, 10) ?: 5
+            val replyStyle = prefs?.getInt(App.KEY_REPLY_STYLE, App.REPLY_STYLE_STANDARD)
+                ?: App.REPLY_STYLE_STANDARD
 
             val userDisplayName = prefs?.getString(App.KEY_USER_DISPLAY_NAME, null)?.trim()
                 ?.takeIf { it.isNotEmpty() } ?: "用户"
@@ -203,7 +315,12 @@ class ChatViewModel(
             longTermMemoryEnabled = character?.enableLongTermMemory == true
 
             assistantRowId = messageRepository.insertMessage(
-                Message(characterId = characterId, content = "", isUser = false)
+                Message(
+                    characterId = characterId,
+                    content = "",
+                    isUser = false,
+                    status = Message.STATUS_STREAMING
+                )
             )
             activeStreamingAssistantMessageId = assistantRowId
 
@@ -212,6 +329,9 @@ class ChatViewModel(
             val messages = mutableListOf<MessageRequest>()
             if (characterPrompt.isNotEmpty()) {
                 messages.add(MessageRequest("system", plug(characterPrompt)))
+            }
+            replyStyleInstruction(replyStyle)?.let { instruction ->
+                messages.add(MessageRequest("system", instruction))
             }
 
             if (longTermMemoryEnabled && appCtx != null) {
@@ -222,7 +342,9 @@ class ChatViewModel(
             }
 
             if (strength > 0) {
-                val hist = messageRepository.getRecentMessagesChronological(characterId, strength)
+                val hist = messageRepository
+                    .getRecentMessagesChronological(characterId, strength)
+                    .filter { it.isUser || it.status != Message.STATUS_FAILED }
                 for (m in hist) {
                     messages.add(
                         MessageRequest(
@@ -274,10 +396,11 @@ class ChatViewModel(
                 val textOut = accumulated.toString().ifBlank { streamResult.getOrNull().orEmpty() }
 
                 if (textOut.isBlank()) {
-                    messageRepository.deleteMessageById(assistantRowId)
+                    markAssistantFailed(assistantRowId, "API返回内容为空")
                     clearStreamingAssistantIfMatches(assistantRowId)
                     if (persistNonStreamingReply(characterId, request, apiService, base)) {
                         chatSucceeded = true
+                        messageRepository.deleteMessageById(assistantRowId)
                     } else {
                         withContext(Dispatchers.Main) {
                             _errorMessage.value = streamResult.exceptionOrNull()?.message
@@ -285,19 +408,24 @@ class ChatViewModel(
                         }
                     }
                 } else {
-                    chatSucceeded = true
+                    markAssistantCompleted(assistantRowId)
                     if (streamResult.isFailure) {
+                        markAssistantFailed(
+                            assistantRowId,
+                            "回复可能未完整接收：${streamResult.exceptionOrNull()?.message ?: ""}".trim()
+                        )
                         withContext(Dispatchers.Main) {
                             _errorMessage.value =
                                 "回复可能未完整接收：${streamResult.exceptionOrNull()?.message ?: ""}"
                         }
+                    } else {
+                        chatSucceeded = true
                     }
                 }
             } finally {
                 httpResponse.close()
             }
         } catch (e: HttpException) {
-            cleanupEmptyAssistantPlaceholder(assistantRowId, accumulated, receivedChunk)
             val errorMsg = when (e.code()) {
                 400 -> "请求参数错误"
                 401 -> "API密钥无效"
@@ -307,26 +435,27 @@ class ChatViewModel(
                 500 -> "服务器内部错误"
                 else -> "API请求失败: ${e.code()}"
             }
+            markAssistantFailed(assistantRowId, errorMsg)
             withContext(Dispatchers.Main) {
                 _errorMessage.value = errorMsg
             }
         } catch (e: TimeoutException) {
-            cleanupEmptyAssistantPlaceholder(assistantRowId, accumulated, receivedChunk)
+            markAssistantFailed(assistantRowId, "请求超时，请检查网络或API地址")
             withContext(Dispatchers.Main) {
                 _errorMessage.value = "请求超时，请检查网络或API地址"
             }
         } catch (e: java.net.UnknownHostException) {
-            cleanupEmptyAssistantPlaceholder(assistantRowId, accumulated, receivedChunk)
+            markAssistantFailed(assistantRowId, "无法解析域名，请检查API地址")
             withContext(Dispatchers.Main) {
                 _errorMessage.value = "无法解析域名，请检查API地址"
             }
         } catch (e: java.net.SocketTimeoutException) {
-            cleanupEmptyAssistantPlaceholder(assistantRowId, accumulated, receivedChunk)
+            markAssistantFailed(assistantRowId, "连接超时，请检查网络")
             withContext(Dispatchers.Main) {
                 _errorMessage.value = "连接超时，请检查网络"
             }
         } catch (e: Exception) {
-            cleanupEmptyAssistantPlaceholder(assistantRowId, accumulated, receivedChunk)
+            markAssistantFailed(assistantRowId, "网络请求失败: ${e.message}")
             withContext(Dispatchers.Main) {
                 _errorMessage.value = "网络请求失败: ${e.message}"
             }
@@ -389,14 +518,26 @@ class ChatViewModel(
         }
     }
 
-    private suspend fun cleanupEmptyAssistantPlaceholder(
-        assistantRowId: Long,
-        accumulated: StringBuilder,
-        receivedChunk: Boolean
-    ) {
+    private suspend fun markAssistantCompleted(assistantRowId: Long) {
         if (assistantRowId < 0L) return
-        if (receivedChunk || accumulated.isNotEmpty()) return
-        runCatching { messageRepository.deleteMessageById(assistantRowId) }
+        runCatching {
+            messageRepository.updateMessageStatus(
+                assistantRowId,
+                Message.STATUS_COMPLETED
+            )
+        }
+    }
+
+    private suspend fun markAssistantFailed(assistantRowId: Long, error: String) {
+        if (assistantRowId < 0L) return
+        val message = error.ifBlank { "回复中断，请重新发送。" }
+        runCatching {
+            messageRepository.updateMessageStatus(
+                assistantRowId,
+                Message.STATUS_FAILED,
+                message
+            )
+        }
         clearStreamingAssistantIfMatches(assistantRowId)
     }
 
@@ -417,6 +558,12 @@ class ChatViewModel(
             Message(characterId = characterId, content = text, isUser = false)
         )
         return true
+    }
+
+    private fun replyStyleInstruction(style: Int): String? = when (style) {
+        App.REPLY_STYLE_SHORT -> "【回复策略】请优先使用简短、直接、易读的回复；除非用户明确要求展开，否则控制篇幅。"
+        App.REPLY_STYLE_DETAILED -> "【回复策略】请在保持连贯的前提下，适当增加情绪、细节、动作和上下文承接，让回复更细腻。"
+        else -> null
     }
 
     private fun isNetworkAvailable(context: Context?): Boolean {
@@ -453,6 +600,7 @@ class ChatViewModel(
     companion object {
         private const val TAG = "ChatViewModel"
         private const val NETWORK_CHECK_INTERVAL = 5000L
+        private const val MIN_MESSAGES_FOR_MANUAL_MEMORY = 5
     }
 }
 

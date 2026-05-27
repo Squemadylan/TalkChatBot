@@ -89,7 +89,7 @@ class ChatFragment : Fragment() {
         applyCharacterContextFromArgs(isInitial = true)
         setupRecyclerForCurrentMode()
         setupSendButton()
-        setupSearchAndDelete()
+        setupManageButton()
         setupHubSearchFilter()
         setupBackNavigation()
         observeData()
@@ -319,7 +319,11 @@ class ChatFragment : Fragment() {
         val show = prefs().getBoolean(App.KEY_CHAT_SHOW_AVATARS, true)
         val userPath = prefs().getString(App.KEY_USER_AVATAR_PATH, null)
         val charPath = characterAvatarPath.ifBlank { null }
-        messageAdapter?.updateChatDisplay(show, charPath, userPath)
+        val bubbleStyle = prefs().getInt(
+            App.KEY_CHAT_BUBBLE_STYLE,
+            App.CHAT_BUBBLE_STYLE_DEFAULT
+        )
+        messageAdapter?.updateChatDisplay(show, charPath, userPath, bubbleStyle)
     }
 
     private fun applyUserPlaceholdersToMessageAdapter() {
@@ -376,18 +380,10 @@ class ChatFragment : Fragment() {
         })
     }
 
-    private fun setupSearchAndDelete() {
+    private fun setupManageButton() {
         binding?.btnDelete?.setOnClickListener {
             if (characterId != 0L) {
-                ConfirmDialog(
-                    title = "清空对话记录",
-                    message = "确定删除与该角色的全部聊天记录？（角色保留）",
-                    positiveText = "清空",
-                    onConfirm = {
-                        viewModel?.deleteMessagesForCharacter(characterId)
-                        showToast("已清空对话记录")
-                    }
-                ).show(childFragmentManager, "ClearChatDialog_$characterId")
+                showChatManageMenu(it)
                 return@setOnClickListener
             }
             ConfirmDialog(
@@ -395,11 +391,51 @@ class ChatFragment : Fragment() {
                 message = "将删除所有角色下的全部聊天记录，且不可恢复。确定继续？",
                 positiveText = "清空",
                 onConfirm = {
-                    viewModel?.deleteAllMessages()
+                    viewModel?.deleteAllMessages(requireContext())
                     showToast("已清空全部回忆")
                 }
             ).show(childFragmentManager, "ClearAllChatDialog")
         }
+    }
+
+    private fun showChatManageMenu(anchor: View) {
+        val popup = PopupMenu(requireContext(), anchor)
+        popup.menu.add(0, MENU_SAVE_LONG_MEMORY, 0, "保存长久记忆")
+        popup.menu.add(0, MENU_DELETE_CHAT_MESSAGES, 1, "删除聊天记录")
+        popup.menu.add(0, MENU_DELETE_LONG_MEMORY, 2, "删除长久记忆")
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                MENU_SAVE_LONG_MEMORY -> {
+                    viewModel?.saveLongTermMemoryNow(characterId, requireContext())
+                    true
+                }
+                MENU_DELETE_CHAT_MESSAGES -> {
+                    ConfirmDialog(
+                        title = "删除聊天记录",
+                        message = "确定删除与该角色的全部聊天记录？长久记忆会保留。",
+                        positiveText = "删除",
+                        onConfirm = {
+                            viewModel?.deleteChatMessagesOnlyForCharacter(characterId)
+                            showToast("已删除聊天记录")
+                        }
+                    ).show(childFragmentManager, "DeleteChatMessages_$characterId")
+                    true
+                }
+                MENU_DELETE_LONG_MEMORY -> {
+                    ConfirmDialog(
+                        title = "删除长久记忆",
+                        message = "确定删除该角色已保存的长久记忆？聊天记录会保留。",
+                        positiveText = "删除",
+                        onConfirm = {
+                            viewModel?.deleteLongTermMemoryForCharacter(characterId, requireContext())
+                        }
+                    ).show(childFragmentManager, "DeleteLongMemory_$characterId")
+                    true
+                }
+                else -> false
+            }
+        }
+        popup.show()
     }
 
     private fun showMemoryRowMenu(row: MemoryHubRow, anchor: View) {
@@ -416,7 +452,7 @@ class ChatFragment : Fragment() {
                             message = "确定删除「${row.character.name}」的全部聊天记录？（角色保留）",
                             positiveText = "清空",
                             onConfirm = {
-                                viewModel?.deleteMessagesForCharacter(row.character.id)
+                                viewModel?.deleteMessagesForCharacter(row.character.id, requireContext())
                                 showToast("已清空该角色回忆")
                             }
                         ).show(childFragmentManager, "ClearMemory_${row.character.id}")
@@ -431,7 +467,7 @@ class ChatFragment : Fragment() {
                             message = "将永久删除角色「${row.character.name}」及其全部聊天记录，不可恢复。确定？",
                             positiveText = "删除",
                             onConfirm = {
-                                viewModel?.deleteCharacterWithMessages(row.character.id)
+                                viewModel?.deleteCharacterWithMessages(row.character.id, requireContext())
                                 showToast("已删除角色")
                             }
                         ).show(childFragmentManager, "DeleteCharacter_${row.character.id}")
@@ -498,6 +534,7 @@ class ChatFragment : Fragment() {
             try {
                 binding?.progressBar?.visibility = View.GONE
                 binding?.btnSend?.isEnabled = !isLoading
+                binding?.btnDelete?.isEnabled = !isLoading
             } catch (e: Exception) {
                 android.util.Log.e(TAG, "Error updating loading state", e)
             }
@@ -533,5 +570,8 @@ class ChatFragment : Fragment() {
         private const val MENU_DELETE_CHARACTER = 2
         private const val MENU_COPY_MESSAGE = 3
         private const val MENU_DELETE_MESSAGE = 4
+        private const val MENU_SAVE_LONG_MEMORY = 5
+        private const val MENU_DELETE_CHAT_MESSAGES = 6
+        private const val MENU_DELETE_LONG_MEMORY = 7
     }
 }

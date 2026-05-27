@@ -23,8 +23,20 @@ class MessageRepository(private val messageDao: MessageDao) {
         messageDao.updateMessageContent(id, content)
     }
 
+    suspend fun updateMessageStatus(id: Long, status: String, error: String = "") {
+        messageDao.updateMessageStatus(id, status, error)
+    }
+
+    suspend fun updateMessageContentAndStatus(id: Long, content: String, status: String, error: String = "") {
+        messageDao.updateMessageContentAndStatus(id, content, status, error)
+    }
+
     suspend fun deleteMessageById(id: Long) {
         messageDao.deleteMessageById(id)
+    }
+
+    suspend fun markStaleStreamingMessagesFailed(characterId: Long, activeMessageId: Long) {
+        messageDao.markStaleStreamingMessagesFailed(characterId, activeMessageId)
     }
 
     suspend fun deleteMessagesByCharacterId(characterId: Long) {

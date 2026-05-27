@@ -12,6 +12,8 @@ import android.view.ViewGroup
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -20,13 +22,13 @@ import com.example.chatbot.App
 import com.example.chatbot.R
 import com.example.chatbot.data.repository.CharacterRepository
 import com.example.chatbot.databinding.FragmentSettingBinding
+import com.example.chatbot.ui.MainActivity
 import com.example.chatbot.ui.common.ConfirmDialog
 import com.example.chatbot.ui.common.DEFAULT_INPUT_MAX_LENGTH
 import com.example.chatbot.ui.common.showTextInputPrompt
 import com.example.chatbot.util.AppUpdateManager
 import com.example.chatbot.util.AvatarStorage
 import com.example.chatbot.util.BackupManager
-import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -127,11 +129,13 @@ class SettingFragment : Fragment() {
         updateDarkModeSwitch()
         bindMemoryAndAvatarPrefs()
         refreshChatBackgroundSummary()
+        refreshPreferenceSummaries()
     }
 
     override fun onResume() {
         super.onResume()
         refreshChatBackgroundSummary()
+        refreshPreferenceSummaries()
         tryRequestStoragePermissionsOnEnter()
     }
 
@@ -213,23 +217,23 @@ class SettingFragment : Fragment() {
         }
 
         binding?.llBubbleSetting?.setOnClickListener {
-            showToast("气泡设置")
+            showBubbleStyleDialog()
         }
 
         binding?.llVoiceSetting?.setOnClickListener {
-            showToast("语音设置")
+            showToast("语音能力即将支持")
         }
 
         binding?.llReplySetting?.setOnClickListener {
-            showToast("回复设置")
+            showReplyStyleDialog()
         }
 
         binding?.llImageSetting?.setOnClickListener {
-            showToast("配图设置")
+            showToast("配图能力即将支持")
         }
 
         binding?.llStatusBarSetting?.setOnClickListener {
-            showToast("状态栏设置")
+            showStatusBarDialog()
         }
 
         binding?.llBackup?.setOnClickListener {
@@ -328,6 +332,92 @@ class SettingFragment : Fragment() {
         prefs().edit().remove(App.KEY_CHAT_BACKGROUND_PATH).apply()
         refreshChatBackgroundSummary()
         showToast("已恢复默认背景")
+    }
+
+    private fun refreshPreferenceSummaries() {
+        if (_binding == null) return
+        val bubbleStyle = prefs().getInt(
+            App.KEY_CHAT_BUBBLE_STYLE,
+            App.CHAT_BUBBLE_STYLE_DEFAULT
+        )
+        binding?.tvBubbleSummary?.text = "当前：${bubbleStyleLabel(bubbleStyle)}"
+
+        val replyStyle = prefs().getInt(App.KEY_REPLY_STYLE, App.REPLY_STYLE_STANDARD)
+        binding?.tvReplySummary?.text = replyStyleSummary(replyStyle)
+
+        val immersive = prefs().getBoolean(App.KEY_STATUS_BAR_IMMERSIVE, false)
+        binding?.tvStatusBarSummary?.text = if (immersive) {
+            "沉浸式：透明状态栏，图标跟随主题"
+        } else {
+            "默认：保留系统状态栏间距，图标跟随主题"
+        }
+    }
+
+    private fun showBubbleStyleDialog() {
+        val options = arrayOf("默认", "紧凑", "圆角", "半透明")
+        val current = prefs().getInt(
+            App.KEY_CHAT_BUBBLE_STYLE,
+            App.CHAT_BUBBLE_STYLE_DEFAULT
+        ).coerceIn(options.indices)
+        showChoiceDialog("气泡样式", options, current) { which ->
+            prefs().edit().putInt(App.KEY_CHAT_BUBBLE_STYLE, which).apply()
+            refreshPreferenceSummaries()
+            showToast("气泡样式已切换为${options[which]}")
+        }
+    }
+
+    private fun showReplyStyleDialog() {
+        val options = arrayOf("标准", "短回复", "细腻")
+        val current = prefs().getInt(
+            App.KEY_REPLY_STYLE,
+            App.REPLY_STYLE_STANDARD
+        ).coerceIn(options.indices)
+        showChoiceDialog("回复策略", options, current) { which ->
+            prefs().edit().putInt(App.KEY_REPLY_STYLE, which).apply()
+            refreshPreferenceSummaries()
+            showToast("回复策略已切换为${options[which]}")
+        }
+    }
+
+    private fun showStatusBarDialog() {
+        val options = arrayOf("默认状态栏", "沉浸式状态栏")
+        val current = if (prefs().getBoolean(App.KEY_STATUS_BAR_IMMERSIVE, false)) 1 else 0
+        showChoiceDialog("状态栏设置", options, current) { which ->
+            prefs().edit().putBoolean(App.KEY_STATUS_BAR_IMMERSIVE, which == 1).apply()
+            (activity as? MainActivity)?.applyStatusBarSettings()
+            refreshPreferenceSummaries()
+            showToast("状态栏设置已更新")
+        }
+    }
+
+    private fun showChoiceDialog(
+        title: String,
+        options: Array<String>,
+        checkedItem: Int,
+        onSelected: (Int) -> Unit
+    ) {
+        if (!isAdded || context == null) return
+        AlertDialog.Builder(requireContext())
+            .setTitle(title)
+            .setSingleChoiceItems(options, checkedItem.coerceIn(options.indices)) { dialog, which ->
+                onSelected(which)
+                dialog.dismiss()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun bubbleStyleLabel(style: Int): String = when (style) {
+        App.CHAT_BUBBLE_STYLE_COMPACT -> "紧凑"
+        App.CHAT_BUBBLE_STYLE_ROUNDED -> "圆角"
+        App.CHAT_BUBBLE_STYLE_TRANSLUCENT -> "半透明"
+        else -> "默认"
+    }
+
+    private fun replyStyleSummary(style: Int): String = when (style) {
+        App.REPLY_STYLE_SHORT -> "短回复：优先简洁直接"
+        App.REPLY_STYLE_DETAILED -> "细腻：增加情绪、细节和承接"
+        else -> "标准：自然平衡，不额外约束"
     }
 
     private fun showBackgroundOptionsDialog() {

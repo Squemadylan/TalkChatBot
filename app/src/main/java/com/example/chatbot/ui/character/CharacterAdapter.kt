@@ -13,7 +13,8 @@ import com.example.chatbot.util.AvatarStorage
 class CharacterAdapter(
     private val onCardClick: (Character) -> Unit,
     private val onAvatarEdit: (Character) -> Unit,
-    private val onAvatarLongClick: (Character) -> Unit
+    private val onAvatarLongClick: (Character, View) -> Unit,
+    private val onCardLongClick: (Character, View) -> Unit
 ) : ListAdapter<Character, CharacterAdapter.CharacterViewHolder>(CharacterDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CharacterViewHolder {
@@ -27,7 +28,7 @@ class CharacterAdapter(
 
     override fun onBindViewHolder(holder: CharacterViewHolder, position: Int) {
         val character = getItem(position)
-        holder.bind(character, onCardClick, onAvatarEdit, onAvatarLongClick)
+        holder.bind(character, onCardClick, onAvatarEdit, onAvatarLongClick, onCardLongClick)
     }
 
     class CharacterViewHolder(private val binding: ItemCharacterBinding) :
@@ -37,7 +38,8 @@ class CharacterAdapter(
             character: Character,
             onCardClick: (Character) -> Unit,
             onAvatarEdit: (Character) -> Unit,
-            onAvatarLongClick: (Character) -> Unit
+            onAvatarLongClick: (Character, View) -> Unit,
+            onCardLongClick: (Character, View) -> Unit
         ) {
             binding.tvName.text = character.name
             AvatarStorage.loadInto(binding.ivAvatar, character.avatar.takeIf { it.isNotBlank() })
@@ -59,9 +61,13 @@ class CharacterAdapter(
             }
 
             binding.root.setOnClickListener { onCardClick(character) }
+            binding.root.setOnLongClickListener {
+                onCardLongClick(character, it)
+                true
+            }
             binding.btnAvatarEdit.setOnClickListener { onAvatarEdit(character) }
             binding.ivAvatar.setOnLongClickListener {
-                onAvatarLongClick(character)
+                onAvatarLongClick(character, it)
                 true
             }
         }

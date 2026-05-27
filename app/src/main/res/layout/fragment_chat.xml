@@ -59,12 +59,15 @@
 
             <Button
                 android:id="@+id/btnDelete"
-                android:layout_width="@dimen/kd_touch_min"
+                android:layout_width="wrap_content"
                 android:layout_height="@dimen/kd_touch_min"
                 android:background="@drawable/bg_input_radius"
-                android:text="🗑️"
-                android:textColor="@color/text_secondary"
-                android:textSize="@dimen/kd_font_large"/>
+                android:minWidth="@dimen/kd_touch_min"
+                android:paddingStart="@dimen/kd_space_300"
+                android:paddingEnd="@dimen/kd_space_300"
+                android:text="管理"
+                android:textColor="@color/text_on_primary"
+                android:textSize="@dimen/kd_font_base"/>
 
         </LinearLayout>
 

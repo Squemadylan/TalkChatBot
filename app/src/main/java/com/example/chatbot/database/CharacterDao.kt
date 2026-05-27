@@ -17,7 +17,7 @@ interface CharacterDao {
     suspend fun getCharacterById(id: Long): Character?
 
     @Insert
-    suspend fun insertCharacter(character: Character)
+    suspend fun insertCharacter(character: Character): Long
 
     @Update
     suspend fun updateCharacter(character: Character)

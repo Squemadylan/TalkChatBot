@@ -1,11 +1,18 @@
 package com.example.chatbot.ui
 
+import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
+import com.example.chatbot.App
 import com.example.chatbot.R
 import com.example.chatbot.ui.chat.ChatFragment
 import com.example.chatbot.util.AppUpdateManager
@@ -19,11 +26,13 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        applyStatusBarSettings()
         initializeNavigation()
     }
 
     override fun onResume() {
         super.onResume()
+        applyStatusBarSettings()
         if (!startupUpdateCheckDone) {
             startupUpdateCheckDone = true
             AppUpdateManager.runStartupCheck(this)
@@ -91,6 +100,26 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             showErrorAndFinish("Failed to initialize navigation: ${e.message}")
         }
+    }
+
+    fun applyStatusBarSettings() {
+        val prefs = getSharedPreferences(App.PREFS_NAME, MODE_PRIVATE)
+        val immersive = prefs.getBoolean(App.KEY_STATUS_BAR_IMMERSIVE, false)
+        val savedNightMode = prefs.getInt(App.KEY_NIGHT_MODE, AppCompatDelegate.MODE_NIGHT_YES)
+        val lightStatusBarIcons = savedNightMode == AppCompatDelegate.MODE_NIGHT_NO
+
+        WindowCompat.setDecorFitsSystemWindows(window, !immersive)
+        findViewById<View>(R.id.main_root)?.fitsSystemWindows = !immersive
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            window.statusBarColor = if (immersive) {
+                Color.TRANSPARENT
+            } else {
+                ContextCompat.getColor(this, R.color.dark_background)
+            }
+            window.navigationBarColor = ContextCompat.getColor(this, R.color.dark_bottom_nav)
+        }
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars =
+            lightStatusBarIcons
     }
 
     private fun showErrorAndFinish(message: String) {

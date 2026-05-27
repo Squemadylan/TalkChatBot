@@ -24,8 +24,20 @@ interface MessageDao {
     @Query("UPDATE messages SET content = :content WHERE id = :id")
     suspend fun updateMessageContent(id: Long, content: String)
 
+    @Query("UPDATE messages SET status = :status, error = :error WHERE id = :id")
+    suspend fun updateMessageStatus(id: Long, status: String, error: String = "")
+
+    @Query("UPDATE messages SET content = :content, status = :status, error = :error WHERE id = :id")
+    suspend fun updateMessageContentAndStatus(id: Long, content: String, status: String, error: String = "")
+
     @Query("DELETE FROM messages WHERE id = :id")
     suspend fun deleteMessageById(id: Long)
+
+    @Query(
+        "UPDATE messages SET status = 'failed', error = '回复中断，请重新发送。' " +
+                "WHERE characterId = :characterId AND id != :activeMessageId AND isUser = 0 AND status = 'streaming'"
+    )
+    suspend fun markStaleStreamingMessagesFailed(characterId: Long, activeMessageId: Long)
 
     @Delete
     suspend fun deleteMessage(message: Message)

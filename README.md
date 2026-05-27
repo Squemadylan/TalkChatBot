@@ -4,7 +4,79 @@
 
 > 仓库名仍为 [TalkChatBot](https://github.com/Squemadylan/TalkChatBot)；应用显示名与图标已更新为 **独白匣**。
 
-- **当前版本**：1.2.0（versionCode 6）
+---
+
+## AI 开发工作流（Cursor 驱动）
+
+本项目使用 Cursor Agent 全流程驱动开发，规则与模板位于 `.cursor/rules/` 和 `xnotes/`。
+
+### 开发闭环
+
+```
+需求输入 → Cursor 生成 PRD → 架构方案 → 功能开发 → TDD 测试 → PR/CI → 发布
+```
+
+### 常用 Cursor 指令
+
+| 阶段 | 触发指令 |
+|------|---------|
+| **需求** | "帮我写PRD，基于：[粘贴需求]" |
+| **架构** | "基于PRD生成项目骨架" |
+| **功能** | "实现 [功能名称]" |
+| **测试** | "跑一下测试：[粘贴日志]" |
+| **发布** | "帮我打包" |
+
+### 规则文件
+
+```
+.cursor/rules/
+  011-prd-generation.mdc       # PRD 生成规则
+  012-architecture-generation.mdc  # 架构生成规则
+  031-test-fix-loop.mdc        # 测试修复循环规则
+  041-ci-cd-rules.mdc          # CI/PR/发布规则
+  （基础规则 000 / 400 / android-packaging 已在安装时配置）
+```
+
+### 工作流模板
+
+```
+xnotes/
+  template-prd.md              # PRD 填写模板
+  template-arch.md             # 架构文档模板
+  template-story.md            # Story 故事模板
+  workflow-agile.md             # Agile 工作流规范
+```
+
+### 开发文档
+
+```
+.ai/
+  prd.md                       # 产品需求文档
+  arch.md                      # 架构文档
+  story-*.story.md             # 故事卡（每个功能一个文件）
+```
+
+### CI 状态
+
+- **Lint** → `./gradlew lintDebug`
+- **Unit Test** → `./gradlew testDebugUnitTest`
+- **Build** → `./gradlew assembleDebug`
+
+CI 配置：`.github/workflows/ci.yml`（push 到 main/dev 自动触发）
+
+### 月度迭代节奏
+
+每月底整理下月迭代计划，按 Epic/Story 粒度排入冲刺清单。
+
+| 月份 | 主题 | 目标 Epic |
+|------|------|-----------|
+| 2026-05 | 基础体验完善 | Epic-1（角色管理增强） |
+| 2026-06 | 对话能力扩展 | Epic-2（多媒体与搜索） |
+| 2026-Q3 | 进阶特性 | Epic-3（个性化与生态） |
+
+---
+
+- **当前版本**：1.2.1（versionCode 7）
 - **最低系统**：Android 8.0（API 26）
 - **目标 SDK**：34
 - **仓库**：[github.com/Squemadylan/TalkChatBot](https://github.com/Squemadylan/TalkChatBot)
@@ -15,6 +87,11 @@
 ---
 
 ## 近期更新
+
+### v1.2.1（2026-05）
+
+- **备份与恢复**：ZIP 现包含配置页的 API 地址、密钥、模型名、温度、最大 Token；恢复后无需重新填写（旧版备份无 `apiConfig` 字段时自动跳过）
+- **应用内更新**：基于 `app/update.json`；支持强制最低版本、可选更新、SHA-256 校验；设置页提供 **网盘手动更新**（夸克网盘，国内 GitHub 不可达时使用）
 
 ### 2026-05-18
 
@@ -61,7 +138,7 @@
 | **角色** | 角色卡片列表、搜索与按标签筛选、新建/编辑角色 |
 | **回忆** | 按角色汇总最近一条消息；进入某角色后为对话页 |
 | **配置** | 大模型 API 地址、密钥、模型、温度、最大 Token |
-| **设置** | 个人资料、聊天显示、记忆条数、备份恢复、深色模式等 |
+| **设置** | 个人资料、聊天显示、记忆条数、备份恢复、检查更新 / 网盘手动更新、深色模式等 |
 
 进入**某一角色的对话页**时底部导航会隐藏；在 **「回忆」列表**（未进入具体对话）时底部导航保持显示。
 
@@ -108,11 +185,14 @@
 - 聊天是否显示双方头像
 - 带入上下文的历史消息条数（0–10 条）
 - 聊天背景图（选择 / 清除）
-- **备份与恢复**：ZIP 包含全部角色、头像文件、已开启角色的长期记忆、用户名/人设/用户头像；Android 10+ 保存到 `Download/ChatBot/`，较低版本写入存储根目录 `ChatBot/Backups`
+- **备份与恢复**（ZIP 格式版本 3）：全部角色、头像文件、已开启角色的长期记忆、用户名/人设/用户头像，以及 **API 配置**（Base URL、API Key、模型、温度、最大 Token）；Android 10+ 保存到 `Download/ChatBot/`，较低版本写入存储根目录 `ChatBot/Backups`
+- **检查更新**：拉取 `app/update.json`，支持可选更新与强制最低版本；下载安装需「安装未知应用」权限
+- **网盘手动更新**：跳转夸克网盘分享页下载 APK（链接可在 `update.json` 的 `manualUpdateUrl` 配置，亦内置默认地址）
 
 ### 其它
 
 - 本地 Room 数据库持久化角色与消息
+- 启动时自动检查更新（强制更新立即提示；可选更新 24 小时内最多提示一次）
 - Release 构建开启 R8 压缩与资源收缩；Debug 下可选 HTTP 日志
 - 未捕获异常写入应用私有目录 `last_crash.txt`
 
@@ -183,10 +263,10 @@ Debug APK 路径：`app/build/outputs/apk/debug/app-debug.apk`
 3. 同步修改 **`update_manifest_fallback.json`**（与 `update.json` 保持一致）。
 4. 验证：用**低于 `versionCode` 的旧包**安装，冷启动或设置里检查更新。
 
-### 示例（当前线上配置思路）
+### 示例（当前线上配置）
 
-- **`versionCode` 必须与已发布的最新 APK 一致**。当前最新为 **1.2.0（versionCode 6）** 时，应设 `versionCode: 6`；已装 v6 的用户**不会**再收到更新提示。
-- 当前线上策略示例：`versionCode: 6`、`minVersionCode: 5`（v5 可选更新，v4 及以下强制更新）。
+- **`versionCode` 必须与已发布的最新 APK 一致**。当前仓库配置为 **1.2.1（versionCode 7）**：`versionCode: 7`、`minVersionCode: 5`（v5～v6 可选更新到 v7，v4 及以下强制更新）。
+- 已安装 v7 的用户手动检查会提示「当前已是最新版本」。
 
 > **注意**：jsDelivr 的 `@main` 有缓存延迟。客户端会同时请求 Raw / 镜像 / `main` 多个地址，并采用 **`versionCode` 最大** 的一份，避免旧安装包内嵌的历史 commit 镜像盖住新配置。发版后仍可将 `UPDATE_MANIFEST_URL_MIRROR` 改为当次 commit SHA 以加快生效。
 
@@ -211,20 +291,41 @@ Debug APK 路径：`app/build/outputs/apk/debug/app-debug.apk`
 
 ## 待办（规划）
 
-以下功能**尚未实现**或仅为设置页占位入口，后续可能迭代：
+以下功能**尚未实现**或仅为设置页占位入口，后续按月度迭代推进。
 
-- [ ] 角色分组 / 文件夹管理
-- [ ] 角色导入导出（除现有 ZIP 备份外的单独 JSON 等格式）
-- [ ] 消息转发
-- [ ] 对话内发送图片
-- [ ] 语音输入 / 语音播报
-- [ ] 聊天记录全文搜索
-- [ ] 多套 API 配置切换
-- [ ] API 连接一键检测
-- [ ] 设置项：气泡样式、语音、回复策略、配图、状态栏等（当前为占位）
+### 2026-05 月（Epic-1：角色管理增强）
+
+| Story | 功能 | 状态 |
+|-------|------|------|
+| story-1 | 角色分组 / 文件夹管理 | 待开发 |
+| story-2 | 角色导入导出（JSON 格式） | 待开发 |
+
+### 2026-06 月（Epic-2：多媒体与搜索）
+
+| Story | 功能 | 状态 |
+|-------|------|------|
+| story-3 | 对话内发送图片 | 待开发 |
+| story-4 | 聊天记录全文搜索 | 待开发 |
+| story-5 | 语音输入 / 语音播报 | 待开发 |
+
+### 2026-Q3（Epic-3：个性化与生态）
+
+| Story | 功能 | 状态 |
+|-------|------|------|
+| story-6 | 多套 API 配置切换 | 待开发 |
+| story-7 | API 连接一键检测 | 待开发 |
+| story-8 | 背景音乐播放 | 待开发 |
+| story-9 | 官网与社群链接 | 待开发 |
+
+### 已完成
+
 - [x] 应用内检查更新（`app/update.json`，含强制/可选与网盘手动更新）
-- [ ] 官网与社群链接
-- [ ] 背景音乐播放
+- [x] 角色长期记忆（2026-05-18）
+
+### 占位待优化
+
+- [ ] 消息转发
+- [ ] 设置项：气泡样式、回复策略、配图、状态栏等（当前为占位）
 
 ---
 

@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.widget.PopupMenu
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -17,7 +18,9 @@ import com.example.chatbot.App
 import com.example.chatbot.R
 import com.example.chatbot.data.model.Character
 import com.example.chatbot.data.repository.CharacterRepository
+import com.example.chatbot.data.repository.MessageRepository
 import com.example.chatbot.databinding.FragmentCharacterBinding
+import com.example.chatbot.ui.common.ConfirmDialog
 import com.example.chatbot.ui.common.MultiChoiceDialog
 import com.example.chatbot.util.AvatarStorage
 import com.example.chatbot.viewmodel.CharacterViewModel
@@ -98,10 +101,11 @@ class CharacterFragment : Fragment() {
         try {
             val app = requireActivity().application as App
             val characterRepository = CharacterRepository(app.database.characterDao())
+            val messageRepository = MessageRepository(app.database.messageDao())
 
             viewModel = ViewModelProvider(
                 this,
-                CharacterViewModelFactory(characterRepository)
+                CharacterViewModelFactory(characterRepository, messageRepository)
             )[CharacterViewModel::class.java]
 
             observeCharacters()
@@ -142,14 +146,11 @@ class CharacterFragment : Fragment() {
                     pendingAvatarCharacterId = character.id
                     pickCharacterAvatar.launch("image/*")
                 },
-                onAvatarLongClick = { character ->
-                    try {
-                        AddCharacterDialog(existingCharacter = character) { updated ->
-                            viewModel.updateCharacter(updated)
-                        }.show(childFragmentManager, "EditCharacterDialog")
-                    } catch (e: Exception) {
-                        showError("打开编辑失败: ${e.message}")
-                    }
+                onAvatarLongClick = { character, anchor ->
+                    showCharacterMenu(character, anchor)
+                },
+                onCardLongClick = { character, anchor ->
+                    showCharacterMenu(character, anchor)
                 }
             )
 
@@ -170,6 +171,44 @@ class CharacterFragment : Fragment() {
             } catch (e: Exception) {
                 showError("Failed to show dialog: ${e.message}")
             }
+        }
+    }
+
+    private fun showCharacterMenu(character: Character, anchor: View) {
+        val popup = PopupMenu(requireContext(), anchor)
+        popup.menu.add(0, MENU_EDIT_CHARACTER, 0, "编辑角色")
+        popup.menu.add(0, MENU_DELETE_CHARACTER, 1, "删除角色")
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                MENU_EDIT_CHARACTER -> {
+                    showEditCharacterDialog(character)
+                    true
+                }
+                MENU_DELETE_CHARACTER -> {
+                    ConfirmDialog(
+                        title = "删除角色",
+                        message = "将永久删除角色「${character.name}」及其全部聊天记录，不可恢复。确定？",
+                        positiveText = "删除",
+                        onConfirm = {
+                            viewModel.deleteCharacterWithMessages(character.id, requireContext())
+                            showToast("已删除角色")
+                        }
+                    ).show(childFragmentManager, "DeleteCharacter_${character.id}")
+                    true
+                }
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
+    private fun showEditCharacterDialog(character: Character) {
+        try {
+            AddCharacterDialog(existingCharacter = character) { updated ->
+                viewModel.updateCharacter(updated)
+            }.show(childFragmentManager, "EditCharacterDialog_${character.id}")
+        } catch (e: Exception) {
+            showError("打开编辑失败: ${e.message}")
         }
     }
 
@@ -291,5 +330,7 @@ class CharacterFragment : Fragment() {
 
     companion object {
         private const val TAG = "CharacterFragment"
+        private const val MENU_EDIT_CHARACTER = 1
+        private const val MENU_DELETE_CHARACTER = 2
     }
 }

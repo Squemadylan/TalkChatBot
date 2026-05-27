@@ -4,12 +4,15 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import okhttp3.Response
 import okio.BufferedSource
+import java.net.SocketTimeoutException
+import java.util.concurrent.TimeUnit
 
 /**
  * 解析 OpenAI 兼容的聊天接口响应：SSE 流式（如硅基流动 SiliconFlow）或单次 JSON。
  * 文档入口：https://docs.siliconflow.cn/cn/userguide/introduction
  */
 object OpenAiChatResponseReader {
+    private const val STALL_TIMEOUT_SECONDS = 30L
 
     /**
      * 消费 [response] 的 body（成功或失败均会关闭 body）。
@@ -46,9 +49,14 @@ object OpenAiChatResponseReader {
     ): Result<String> {
         val full = StringBuilder()
         return try {
+            source.timeout().timeout(STALL_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            var lastTextAt = System.currentTimeMillis()
             while (true) {
                 val line = source.readUtf8Line() ?: break
                 val trimmed = line.trim()
+                if (System.currentTimeMillis() - lastTextAt > STALL_TIMEOUT_SECONDS * 1000) {
+                    throw SocketTimeoutException("${STALL_TIMEOUT_SECONDS}秒未收到新的回复内容")
+                }
                 if (trimmed.isEmpty()) continue
                 if (trimmed == "data: [DONE]" || trimmed == "[DONE]") break
                 if (!trimmed.startsWith("data:")) continue
@@ -57,6 +65,7 @@ object OpenAiChatResponseReader {
                 val piece = extractDeltaContent(json, gson) ?: continue
                 if (piece.isNotEmpty()) {
                     full.append(piece)
+                    lastTextAt = System.currentTimeMillis()
                     onTextDelta(piece)
                 }
             }

@@ -7,8 +7,8 @@ import kotlinx.coroutines.flow.Flow
 class CharacterRepository(private val characterDao: CharacterDao) {
     val allCharacters: Flow<List<Character>> = characterDao.getAllCharacters()
 
-    suspend fun insertCharacter(character: Character) {
-        characterDao.insertCharacter(character)
+    suspend fun insertCharacter(character: Character): Long {
+        return characterDao.insertCharacter(character)
     }
 
     suspend fun updateCharacter(character: Character) {

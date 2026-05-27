@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/dark_background">
+
+    <!-- 顶部筛选和搜索栏 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="16dp"
+        android:gravity="center_vertical">
+
+        <!-- 每页显示数量 -->
+        <Button
+            android:id="@+id/btnPageSize"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:background="@color/dark_card"
+            android:text="10条/页"
+            android:textColor="@color/pink_primary"
+            android:textSize="14sp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginEnd="8dp"/>
+
+        <!-- 搜索框 -->
+        <EditText
+            android:id="@+id/etSearch"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:hint="搜索回忆..."
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_secondary"
+            android:background="@color/dark_card"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:singleLine="true"
+            android:textSize="14sp"
+            android:layout_marginEnd="8dp"/>
+
+        <!-- 删除按钮 -->
+        <Button
+            android:id="@+id/btnDelete"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@color/dark_card"
+            android:text="🗑️"
+            android:textColor="@color/text_secondary"
+            android:textSize="16sp"/>
+
+    </LinearLayout>
+
+    <!-- 分页控件 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:padding="16dp"
+        android:background="@color/dark_card"
+        android:layout_margin="16dp">
+
+        <Button
+            android:id="@+id/btnFirstPage"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@color/dark_background"
+            android:text="<<"
+            android:textColor="@color/text_secondary"/>
+
+        <Button
+            android:id="@+id/btnPrevPage"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@color/dark_background"
+            android:text="<"
+            android:textColor="@color/text_secondary"
+            android:layout_marginStart="8dp"/>
+
+        <TextView
+            android:id="@+id/tvPageInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1/1"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"/>
+
+        <Button
+            android:id="@+id/btnNextPage"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@color/dark_background"
+            android:text=">"
+            android:textColor="@color/text_secondary"/>
+
+        <Button
+            android:id="@+id/btnLastPage"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@color/dark_background"
+            android:text=">>"
+            android:textColor="@color/text_secondary"
+            android:layout_marginStart="8dp"/>
+
+    </LinearLayout>
+
+    <!-- 聊天列表 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="16dp"
+        android:clipToPadding="false"/>
+
+    <!-- 输入区域 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:background="@color/dark_card">
+
+        <EditText
+            android:id="@+id/etMessage"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:hint="输入消息..."
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_secondary"
+            android:background="@color/dark_background"
+            android:padding="12dp"
+            android:layout_marginEnd="12dp"/>
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:visibility="gone"/>
+
+        <Button
+            android:id="@+id/btnSend"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@color/pink_primary"
+            android:text="发送"/>
+
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,0 +1,14 @@
+﻿[2026-05-27 10:48:37] [INFO] ========================================
+[2026-05-27 10:48:37] [INFO] Android Automated Publish Started
+[2026-05-27 10:48:37] [INFO] Project Dir: e:\New\Dubaixia
+[2026-05-27 10:48:37] [INFO] APK Output Dir: e:\New\Dubaixia\app\build\outputs\apk\debug
+[2026-05-27 10:48:37] [INFO] Skip Test: True
+[2026-05-27 10:48:37] [INFO] ========================================
+[2026-05-27 10:48:37] [INFO] JAVA_HOME set to: C:\Program Files\Android\Android Studio\jbr
+[2026-05-27 10:48:37] [INFO] [Stage 1/3] Cleaning old build outputs...
+[2026-05-27 10:48:45] [SUCCESS] Clean completed
+[2026-05-27 10:48:45] [WARN] [Stage 2/3] Skipping test
+[2026-05-27 10:48:45] [INFO] [Stage 3/3] Running assembleDebug build...
+[2026-05-27 10:49:23] [INFO] To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+[2026-05-27 10:49:23] [INFO] Daemon will be stopped at the end of the build 
+[2026-05-27 10:49:23] [INFO] 

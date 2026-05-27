@@ -1,0 +1,15 @@
+﻿[2026-05-27 10:48:27] [INFO] ========================================
+[2026-05-27 10:48:27] [INFO] Auto Task Manager Started
+[2026-05-27 10:48:27] [INFO] Watch Interval: 10s
+[2026-05-27 10:48:27] [INFO] Prompt File: e:\New\Dubaixia\user-prompts.txt
+[2026-05-27 10:48:27] [INFO] TODO File: e:\New\Dubaixia\backlog-todos.md
+[2026-05-27 10:48:27] [INFO] PRD Output: e:\New\Dubaixia\.ai\prd
+[2026-05-27 10:48:27] [INFO] Auto Build: True
+[2026-05-27 10:48:27] [INFO] ========================================
+[2026-05-27 10:48:37] [WARN] [Round 1] New prompt detected
+[2026-05-27 10:48:37] [INFO] Processing prompt: # 用户提示词文件
+[2026-05-27 10:48:37] [INFO]   Type: BugFix, Priority: High, Est: 1h
+[2026-05-27 10:48:37] [SUCCESS] Generated PRD: e:\New\Dubaixia\.ai\prd\20260527-104837-__用户提示词文件.md
+[2026-05-27 10:48:37] [SUCCESS] Added TODO: TODO-20260527-1048 - # 用户提示词文件
+[2026-05-27 10:48:37] [INFO] Prompt file cleared
+[2026-05-27 10:48:37] [WARN] Triggering automated build...

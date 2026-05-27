@@ -47,6 +47,7 @@ class App : Application(), Thread.UncaughtExceptionHandler {
                 DATABASE_NAME
             )
                 .addMigrations(AppDatabase.MIGRATION_2_3)
+                .addMigrations(AppDatabase.MIGRATION_3_4)
                 .build()
             isInitializing = false
             Log.d(TAG, "Database initialized successfully")
@@ -101,6 +102,21 @@ class App : Application(), Thread.UncaughtExceptionHandler {
         const val KEY_USER_DISPLAY_NAME = "user_display_name"
         /** 个人设置：用户人设，可替换 {{persona}} 等 */
         const val KEY_USER_PERSONA = "user_persona"
+        /** 聊天气泡外观：默认 / 紧凑 / 圆角 / 半透明 */
+        const val KEY_CHAT_BUBBLE_STYLE = "chat_bubble_style"
+        /** 回复策略：标准 / 短回复 / 细腻 */
+        const val KEY_REPLY_STYLE = "reply_style"
+        /** 状态栏是否透明沉浸，图标颜色跟随当前主题 */
+        const val KEY_STATUS_BAR_IMMERSIVE = "status_bar_immersive"
+
+        const val CHAT_BUBBLE_STYLE_DEFAULT = 0
+        const val CHAT_BUBBLE_STYLE_COMPACT = 1
+        const val CHAT_BUBBLE_STYLE_ROUNDED = 2
+        const val CHAT_BUBBLE_STYLE_TRANSLUCENT = 3
+
+        const val REPLY_STYLE_STANDARD = 0
+        const val REPLY_STYLE_SHORT = 1
+        const val REPLY_STYLE_DETAILED = 2
 
         @Volatile
         private var instance: App? = null

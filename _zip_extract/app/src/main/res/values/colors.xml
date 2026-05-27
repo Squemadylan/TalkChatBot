@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="dark_background">#1a1a2e</color>
+    <color name="dark_card">#252542</color>
+    <color name="dark_bottom_nav">#16162a</color>
+    <color name="pink_primary">#ff6b9d</color>
+    <color name="pink_accent">#ff8fab</color>
+    <color name="text_primary">#ffffff</color>
+    <color name="text_secondary">#a0a0b0</color>
+    <color name="bottom_nav_color">#a0a0b0</color>
+    <color name="bottom_nav_selected">#ff6b9d</color>
+    <color name="user_message">#ff6b9d</color>
+    <color name="assistant_message">#2d2d4a</color>
+</resources>
