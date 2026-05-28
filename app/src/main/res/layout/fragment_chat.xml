@@ -41,6 +41,18 @@
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_arrow_back" />
 
+            <ImageButton
+                android:id="@+id/btnSearch"
+                android:layout_width="@dimen/kd_touch_min"
+                android:layout_height="@dimen/kd_touch_min"
+                android:layout_marginEnd="@dimen/kd_space_200"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="搜索"
+                android:padding="@dimen/kd_space_200"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_search"
+                android:visibility="gone" />
+
             <EditText
                 android:id="@+id/etSearch"
                 android:layout_width="0dp"
@@ -56,6 +68,18 @@
                 android:singleLine="true"
                 android:textSize="@dimen/kd_font_base"
                 android:layout_marginEnd="@dimen/kd_space_300"/>
+
+            <ImageButton
+                android:id="@+id/btnSearchChat"
+                android:layout_width="@dimen/kd_touch_min"
+                android:layout_height="@dimen/kd_touch_min"
+                android:layout_marginEnd="@dimen/kd_space_300"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="聊天搜索"
+                android:padding="@dimen/kd_space_200"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_search"
+                android:visibility="gone" />
 
             <Button
                 android:id="@+id/btnDelete"
@@ -114,6 +138,19 @@
                 android:layout_width="@dimen/kd_space_1200"
                 android:layout_height="@dimen/kd_space_1200"
                 android:layout_gravity="bottom"
+                android:visibility="gone"/>
+
+            <ImageButton
+                android:id="@+id/btnVoiceInput"
+                android:layout_width="@dimen/kd_space_1200"
+                android:layout_height="@dimen/kd_space_1200"
+                android:layout_gravity="bottom"
+                android:layout_marginEnd="@dimen/kd_space_200"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="语音输入"
+                android:padding="@dimen/kd_space_200"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_mic"
                 android:visibility="gone"/>
 
             <com.google.android.material.button.MaterialButton

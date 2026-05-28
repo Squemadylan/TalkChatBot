@@ -515,6 +515,7 @@ class ConfigFragment : Fragment() {
             ModelPreset("Qwen 2.5", "https://api.siliconflow.cn/v1", "Qwen/Qwen2.5-72B-Instruct"),
             ModelPreset("Kimi K2", "https://api.siliconflow.cn/v1", "moonshotai/Kimi-K2"),
             ModelPreset("GLM-4", "https://open.bigmodel.cn/api/paas/v4", "glm-4-flash"),
+            ModelPreset("MiniMax-M2.7", "https://api.minimaxi.com/v1", "MiniMax-M2.7"),
             ModelPreset("自定义", "", "")
         )
 

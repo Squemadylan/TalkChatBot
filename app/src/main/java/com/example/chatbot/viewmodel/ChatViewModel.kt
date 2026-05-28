@@ -163,6 +163,73 @@ class ChatViewModel(
         }
     }
 
+    fun toggleStarred(messageId: Long, starred: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            messageRepository.updateStarred(messageId, starred, if (starred) System.currentTimeMillis() else null)
+        }
+    }
+
+    fun searchMessagesInChat(characterId: Long, query: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val results = messageRepository.searchMessages(characterId, query)
+            _searchResults.postValue(results)
+        }
+    }
+
+    private val _searchResults = MutableLiveData<List<Message>>()
+    val searchResults: LiveData<List<Message>> = _searchResults
+
+    private val _assistantMessageToSpeak = MutableLiveData<String?>()
+    val assistantMessageToSpeak: LiveData<String?> = _assistantMessageToSpeak
+
+    fun exportChat(characterId: Long, characterName: String, format: String, context: Context?) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isLoading.postValue(true)
+            try {
+                val messages = messageRepository.getAllMessagesByCharacterId(characterId)
+                if (messages.isEmpty()) {
+                    _errorMessage.postValue("没有聊天记录可导出")
+                    return@launch
+                }
+                val sb = StringBuilder()
+                if (format == "md") {
+                    sb.appendLine("# 与「${characterName}」的对话")
+                    sb.appendLine()
+                    sb.appendLine("> 导出时间：${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date())}")
+                    sb.appendLine()
+                }
+                for (msg in messages) {
+                    val speaker = if (msg.isUser) "用户" else characterName
+                    val time = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date(msg.timestamp))
+                    if (format == "md") {
+                        sb.appendLine("**$speaker** [$time]")
+                        sb.appendLine(msg.content)
+                        sb.appendLine()
+                    } else {
+                        sb.appendLine("$speaker [$time]: ${msg.content}")
+                    }
+                }
+                val fileName = "${characterName}_${System.currentTimeMillis()}.$format"
+                val content = sb.toString()
+                if (context != null) {
+                    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(android.content.Intent.EXTRA_SUBJECT, "聊天记录：$characterName")
+                        putExtra(android.content.Intent.EXTRA_TEXT, content)
+                    }
+                    withContext(Dispatchers.Main) {
+                        context.startActivity(android.content.Intent.createChooser(intent, "导出聊天记录"))
+                    }
+                }
+                _errorMessage.postValue("已准备导出")
+            } catch (e: Exception) {
+                _errorMessage.postValue("导出失败：${e.message}")
+            } finally {
+                _isLoading.postValue(false)
+            }
+        }
+    }
+
     /** 删除该角色的全部聊天记录与角色本体 */
     fun deleteCharacterWithMessages(characterId: Long, context: Context? = null) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -369,8 +436,9 @@ class ChatViewModel(
             )
 
             val base = RetrofitClient.normalizeApiBaseUrl(config.baseUrl)
-
             val gson = Gson()
+            Log.d(TAG, "Request JSON: ${gson.toJson(request)}")
+            Log.d(TAG, "base=$base")
             val streamClient = RetrofitClient.createOkHttpClient(config.apiKey, logBodies = false)
             val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
@@ -525,6 +593,14 @@ class ChatViewModel(
                 assistantRowId,
                 Message.STATUS_COMPLETED
             )
+        }
+        val character = characterRepository.getCharacterById(activeCharacterId.value ?: 0L)
+        if (character?.enableAutoRead == true) {
+            val messages = messageRepository.getAllMessagesByCharacterId(activeCharacterId.value ?: 0L)
+            val lastMsg = messages.lastOrNull()
+            lastMsg?.let {
+                _assistantMessageToSpeak.postValue(it.content)
+            }
         }
     }
 

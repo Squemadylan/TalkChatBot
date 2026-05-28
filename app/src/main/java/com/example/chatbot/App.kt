@@ -48,6 +48,7 @@ class App : Application(), Thread.UncaughtExceptionHandler {
             )
                 .addMigrations(AppDatabase.MIGRATION_2_3)
                 .addMigrations(AppDatabase.MIGRATION_3_4)
+                .addMigrations(AppDatabase.MIGRATION_4_5)
                 .build()
             isInitializing = false
             Log.d(TAG, "Database initialized successfully")
@@ -108,6 +109,8 @@ class App : Application(), Thread.UncaughtExceptionHandler {
         const val KEY_REPLY_STYLE = "reply_style"
         /** 状态栏是否透明沉浸，图标颜色跟随当前主题 */
         const val KEY_STATUS_BAR_IMMERSIVE = "status_bar_immersive"
+    const val KEY_VOICE_SPEED = "voice_speed"
+    const val KEY_VOICE_LANGUAGE = "voice_language"
 
         const val CHAT_BUBBLE_STYLE_DEFAULT = 0
         const val CHAT_BUBBLE_STYLE_COMPACT = 1

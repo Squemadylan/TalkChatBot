@@ -59,14 +59,16 @@ xnotes/
 
 ### 自动化脚本
 
+实现位于 `scripts/automation/`；根目录 `Auto-*.ps1` 为快捷入口（兼容旧用法）。
+
 ```
-*.ps1                          # PowerShell 自动化脚本
-  Auto-Build.ps1              # 独立构建脚本
-  Auto-Publish.ps1             # 完整发布流程
-  Auto-Feature-Verify.ps1      # 功能验证脚本
-  Start-Iteration.ps1           # 迭代触发脚本
-  Start-All-Automation.ps1      # 一键启动所有自动化
+scripts/automation/            # 构建、发布、迭代、Git 推送
+scripts/state/                 # user-prompts.txt、backlog-todos.md 等
+scripts/dev/                   # Python 工具脚本
+_local/                        # 本机日志、APK 副本（不入 Git）
 ```
+
+目录说明见 [docs/PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md)。
 
 ### CI 状态
 
@@ -88,7 +90,7 @@ CI 配置：`.github/workflows/ci.yml`（push 到 main/dev 自动触发）
 
 ---
 
-- **当前版本**：1.2.1（versionCode 7）
+- **当前版本**：1.4（versionCode 8）
 - **最低系统**：Android 8.0（API 26）
 - **目标 SDK**：34
 - **仓库**：[github.com/Squemadylan/TalkChatBot](https://github.com/Squemadylan/TalkChatBot)
@@ -99,6 +101,19 @@ CI 配置：`.github/workflows/ci.yml`（push 到 main/dev 自动触发）
 ---
 
 ## 近期更新
+
+### v1.4（2026-05）
+
+- **气泡样式**：支持默认/紧凑/圆角/半透明四种样式，切换实时生效
+- **回复策略**：支持标准/短回复/细腻三种预设，自动调整 API 参数
+- **状态栏沉浸**：可开关状态栏沉浸模式
+- **设置项优化**：占位功能标注为「即将支持」
+
+### v1.3（2026-05）
+
+- **API 检测**：配置页支持一键检测连接，显示成功/Key 错误/余额不足等状态
+- **模型预设**：根据模型名自动推荐默认 max_tokens
+- **配置摘要**：设置页展示当前 API 配置摘要
 
 ### v1.2.1（2026-05）
 

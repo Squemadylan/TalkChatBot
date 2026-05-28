@@ -53,4 +53,14 @@ class MessageRepository(private val messageDao: MessageDao) {
     suspend fun getAllMessagesByCharacterId(characterId: Long): List<Message> {
         return messageDao.getAllMessagesByCharacterId(characterId)
     }
+
+    fun getStarredMessages(): Flow<List<Message>> = messageDao.getStarredMessages()
+
+    suspend fun updateStarred(id: Long, isStarred: Boolean, starredAt: Long?) {
+        messageDao.updateStarred(id, isStarred, starredAt)
+    }
+
+    suspend fun searchMessages(characterId: Long, query: String): List<Message> {
+        return messageDao.searchMessages(characterId, query)
+    }
 }

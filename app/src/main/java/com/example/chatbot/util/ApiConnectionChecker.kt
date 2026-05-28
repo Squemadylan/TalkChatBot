@@ -4,11 +4,11 @@ import com.example.chatbot.data.model.ApiConfig
 import com.example.chatbot.data.network.ApiService
 import com.example.chatbot.data.network.ChatRequest
 import com.example.chatbot.data.network.MessageRequest
+import com.example.chatbot.data.network.RetrofitClient
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import java.io.IOException
 
 /**
@@ -39,6 +39,7 @@ object ApiConnectionChecker {
 
     private const val TIMEOUT_MS = 10000L
     private const val TEST_MODEL = "deepseek-ai/DeepSeek-V3.2"
+    private const val TAG = "ApiConnectionChecker"
 
     suspend fun checkConnection(config: ApiConfig): ApiCheckResult = withContext(Dispatchers.IO) {
         val startTime = System.currentTimeMillis()
@@ -61,19 +62,12 @@ object ApiConnectionChecker {
         val startTime = System.currentTimeMillis()
 
         return try {
-            // 构建 URL
-            val baseUrl = config.baseUrl.trim().let {
-                if (it.endsWith("/")) it else "$it/"
-            }
-            val chatUrl = "${baseUrl}v1/chat/completions"
+            // Build URL - normalizeApiBaseUrl returns base + /v1/, so just append chat/completions
+            val chatUrl = "${RetrofitClient.normalizeApiBaseUrl(config.baseUrl)}chat/completions"
+            Log.d(TAG, "checkConnection URL: $chatUrl")
 
-            // 创建 Retrofit 实例
-            val retrofit = Retrofit.Builder()
-                .baseUrl(baseUrl)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-
-            val apiService = retrofit.create(ApiService::class.java)
+            // Create API service using RetrofitClient (includes API key header)
+            val apiService = RetrofitClient.create(config.baseUrl, config.apiKey)
 
             // 构造测试请求
             val request = ChatRequest(
@@ -102,7 +96,9 @@ object ApiConnectionChecker {
 
         } catch (e: retrofit2.HttpException) {
             val latency = System.currentTimeMillis() - startTime
-            parseHttpError(e.code(), e.response()?.errorBody()?.string(), latency)
+            val errorBody = e.response()?.errorBody()?.string()
+            Log.d("ApiConnectionChecker", "HTTP ${e.code()}: $errorBody")
+            parseHttpError(e.code(), errorBody, latency)
 
         } catch (e: IOException) {
             val latency = System.currentTimeMillis() - startTime

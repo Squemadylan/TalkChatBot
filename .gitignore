@@ -10,6 +10,13 @@ local.properties
 
 # Cursor / local
 .cursor/
+.android/
+
+# Local-only artifacts (logs, APK copies, SDK zips)
+_local/
+
+# Third-party SDK trees (keep third_party/README.md if tracked)
+third_party/archive/
 
 # Design export (large; not required to build)
 base.json
@@ -17,6 +24,19 @@ base.json
 # Accidental captures
 captures/
 tmp-memory*.png
+
+# Root clutter
+*.zip
+chatbot_project.zip
+build.log
+build_output.log
+*_output.log
+auto-update.log
+feature-verify.log
+iteration.log
+publish.log
+task-manager.log
+test.log
 
 # Built artifacts (use CI or manual upload for APK/AAB)
 *.apk
@@ -28,6 +48,8 @@ tmp-memory*.png
 # Documentation and templates
 xnotes/
 docs/
-# Exception: keep tracked workflow templates
+# Exception: keep tracked workflow templates + layout doc
 !docs/ai-workflow/
 docs/ai-workflow/**
+!docs/PROJECT_LAYOUT.md
+!docs/wiki.md

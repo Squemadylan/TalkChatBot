@@ -58,4 +58,13 @@ interface MessageDao {
 
     @Query("SELECT * FROM messages WHERE characterId = :characterId ORDER BY timestamp ASC")
     suspend fun getAllMessagesByCharacterId(characterId: Long): List<Message>
+
+    @Query("SELECT * FROM messages WHERE isStarred = 1 ORDER BY starredAt DESC")
+    fun getStarredMessages(): Flow<List<Message>>
+
+    @Query("UPDATE messages SET isStarred = :isStarred, starredAt = :starredAt WHERE id = :id")
+    suspend fun updateStarred(id: Long, isStarred: Boolean, starredAt: Long?)
+
+    @Query("SELECT * FROM messages WHERE characterId = :characterId AND content LIKE '%' || :query || '%' ORDER BY timestamp ASC")
+    suspend fun searchMessages(characterId: Long, query: String): List<Message>
 }

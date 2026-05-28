@@ -24,6 +24,7 @@ import com.example.chatbot.databinding.FragmentChatBinding
 import com.example.chatbot.ui.common.ConfirmDialog
 import com.example.chatbot.util.AvatarStorage
 import com.example.chatbot.util.UserPromptPlaceholders
+import com.example.chatbot.util.VoiceHelper
 import com.example.chatbot.viewmodel.ChatViewModel
 import com.example.chatbot.viewmodel.ChatViewModelFactory
 import io.noties.markwon.Markwon
@@ -55,6 +56,9 @@ class ChatFragment : Fragment() {
 
     private var hubRowsCache: List<MemoryHubRow> = emptyList()
     private var searchQuery: String = ""
+    private var isSearchMode: Boolean = false
+    private var chatSearchQuery: String = ""
+    private var isVoiceInputActive: Boolean = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -92,6 +96,8 @@ class ChatFragment : Fragment() {
         setupManageButton()
         setupHubSearchFilter()
         setupBackNavigation()
+        setupChatSearch()
+        setupVoiceInput()
         observeData()
     }
 
@@ -106,6 +112,92 @@ class ChatFragment : Fragment() {
 
     private fun setupBackNavigation() {
         binding?.btnBack?.setOnClickListener { navigateBackFromChat() }
+    }
+
+    private fun setupChatSearch() {
+        binding?.btnSearchChat?.setOnClickListener {
+            isSearchMode = !isSearchMode
+            binding?.etSearch?.visibility = if (isSearchMode) View.VISIBLE else View.GONE
+            if (!isSearchMode) {
+                binding?.etSearch?.text?.clear()
+                chatSearchQuery = ""
+                submitChatSearchResults()
+            } else {
+                binding?.etSearch?.requestFocus()
+            }
+        }
+        binding?.etSearch?.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                chatSearchQuery = s?.toString()?.trim().orEmpty()
+                submitChatSearchResults()
+            }
+        })
+    }
+
+    private fun submitChatSearchResults() {
+        if (characterId == 0L) return
+        if (chatSearchQuery.isEmpty()) {
+            viewModel?.setActiveCharacterId(characterId)
+        } else {
+            viewModel?.searchMessagesInChat(characterId, chatSearchQuery)
+        }
+    }
+
+    private fun setupVoiceInput() {
+        binding?.btnVoiceInput?.visibility = View.VISIBLE
+        binding?.btnVoiceInput?.setOnClickListener {
+            if (isVoiceInputActive) {
+                isVoiceInputActive = false
+                binding?.btnVoiceInput?.alpha = 1.0f
+                return@setOnClickListener
+            }
+            isVoiceInputActive = true
+            binding?.btnVoiceInput?.alpha = 0.5f
+            try {
+                startActivityForResult(VoiceHelper.createSpeechRecognizerIntent(), REQUEST_SPEECH_RECOGNIZER)
+            } catch (e: Exception) {
+                isVoiceInputActive = false
+                binding?.btnVoiceInput?.alpha = 1.0f
+                showToast("语音识别不可用")
+            }
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_SPEECH_RECOGNIZER && resultCode == android.app.Activity.RESULT_OK) {
+            val results = data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)
+            val spoken = results?.firstOrNull()?.trim()
+            if (!spoken.isNullOrBlank()) {
+                binding?.etMessage?.setText(spoken)
+                binding?.etMessage?.setSelection(spoken.length)
+            }
+        }
+        isVoiceInputActive = false
+        binding?.btnVoiceInput?.alpha = 1.0f
+    }
+
+    private fun speakReply(text: String) {
+        VoiceHelper.init(requireContext()) { success, error ->
+            if (!isAdded || _binding == null) return@init
+            if (success) {
+                val prefs = requireContext().getSharedPreferences(App.PREFS_NAME, android.content.Context.MODE_PRIVATE)
+                val speed = prefs.getFloat(App.KEY_VOICE_SPEED, 1.0f)
+                VoiceHelper.setSpeed(speed)
+                VoiceHelper.speak(text) {}
+            } else {
+                showToast(error ?: "语音引擎初始化失败，请在系统设置中安装语音引擎")
+                // 尝试打开系统 TTS 设置引导用户
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    try {
+                        VoiceHelper.openTtsSettings(requireContext())
+                    } catch (_: Exception) {}
+                }, 2000)
+            }
+        }
     }
 
     override fun onResume() {
@@ -180,7 +272,8 @@ class ChatFragment : Fragment() {
     private fun showMessageLongClickMenu(message: Message, anchor: View) {
         val popup = PopupMenu(requireContext(), anchor, android.view.Gravity.TOP or android.view.Gravity.START)
         popup.menu.add(0, MENU_COPY_MESSAGE, 0, "复制")
-        popup.menu.add(0, MENU_DELETE_MESSAGE, 1, "删除")
+        popup.menu.add(0, MENU_STAR_MESSAGE, 1, if (message.isStarred) "取消收藏" else "收藏")
+        popup.menu.add(0, MENU_DELETE_MESSAGE, 2, "删除")
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 MENU_COPY_MESSAGE -> {
@@ -194,6 +287,11 @@ class ChatFragment : Fragment() {
                     val clip = android.content.ClipData.newPlainText("消息内容", text)
                     clipboard.setPrimaryClip(clip)
                     showToast("已复制到剪贴板")
+                    true
+                }
+                MENU_STAR_MESSAGE -> {
+                    viewModel?.toggleStarred(message.id, !message.isStarred)
+                    showToast(if (message.isStarred) "已取消收藏" else "已收藏")
                     true
                 }
                 MENU_DELETE_MESSAGE -> {
@@ -401,12 +499,17 @@ class ChatFragment : Fragment() {
     private fun showChatManageMenu(anchor: View) {
         val popup = PopupMenu(requireContext(), anchor)
         popup.menu.add(0, MENU_SAVE_LONG_MEMORY, 0, "保存长久记忆")
-        popup.menu.add(0, MENU_DELETE_CHAT_MESSAGES, 1, "删除聊天记录")
-        popup.menu.add(0, MENU_DELETE_LONG_MEMORY, 2, "删除长久记忆")
+        popup.menu.add(0, MENU_EXPORT_CHAT, 1, "导出聊天记录")
+        popup.menu.add(0, MENU_DELETE_CHAT_MESSAGES, 2, "删除聊天记录")
+        popup.menu.add(0, MENU_DELETE_LONG_MEMORY, 3, "删除长久记忆")
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 MENU_SAVE_LONG_MEMORY -> {
                     viewModel?.saveLongTermMemoryNow(characterId, requireContext())
+                    true
+                }
+                MENU_EXPORT_CHAT -> {
+                    showExportDialog()
                     true
                 }
                 MENU_DELETE_CHAT_MESSAGES -> {
@@ -436,6 +539,18 @@ class ChatFragment : Fragment() {
             }
         }
         popup.show()
+    }
+
+    private fun showExportDialog() {
+        if (characterId == 0L) return
+        val options = arrayOf("导出为 Markdown", "导出为 TXT")
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("导出聊天记录")
+            .setItems(options) { _, which ->
+                val format = if (which == 0) "md" else "txt"
+                viewModel?.exportChat(characterId, characterDisplayName, format, requireContext())
+            }
+            .show()
     }
 
     private fun showMemoryRowMenu(row: MemoryHubRow, anchor: View) {
@@ -513,6 +628,11 @@ class ChatFragment : Fragment() {
             }
         }
 
+        vm.assistantMessageToSpeak.observe(viewLifecycleOwner) { text ->
+            if (!isAdded || _binding == null) return@observe
+            text?.let { speakReply(it) }
+        }
+
         vm.messagesForActiveCharacter.observe(viewLifecycleOwner) { messages ->
             if (!isAdded || _binding == null) return@observe
             if (characterId == 0L) return@observe
@@ -547,6 +667,17 @@ class ChatFragment : Fragment() {
                 }
             }
         }
+
+        vm.searchResults.observe(viewLifecycleOwner) { results ->
+            if (!isAdded || _binding == null) return@observe
+            if (characterId == 0L) return@observe
+            if (isSearchMode && chatSearchQuery.isNotEmpty()) {
+                messageAdapter?.submitList(results)
+                if (results.isNotEmpty()) {
+                    binding?.recyclerView?.scrollToPosition(results.size - 1)
+                }
+            }
+        }
     }
 
     private fun showToast(message: String) {
@@ -569,9 +700,12 @@ class ChatFragment : Fragment() {
         private const val MENU_CLEAR_CHARACTER = 1
         private const val MENU_DELETE_CHARACTER = 2
         private const val MENU_COPY_MESSAGE = 3
+        private const val MENU_STAR_MESSAGE = 8
         private const val MENU_DELETE_MESSAGE = 4
         private const val MENU_SAVE_LONG_MEMORY = 5
         private const val MENU_DELETE_CHAT_MESSAGES = 6
         private const val MENU_DELETE_LONG_MEMORY = 7
+        private const val MENU_EXPORT_CHAT = 9
+        private const val REQUEST_SPEECH_RECOGNIZER = 1001
     }
 }

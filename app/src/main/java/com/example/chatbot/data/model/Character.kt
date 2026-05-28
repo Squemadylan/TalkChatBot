@@ -13,6 +13,9 @@ data class Character(
     val tags: String,
     val openingGreeting: String = "",
     val enableLongTermMemory: Boolean = false,
+    val enableAutoRead: Boolean = false,
+    val voiceSpeed: Float = 1.0f,
+    val voiceLanguage: String = "zh-CN",
     val createdAt: Long = System.currentTimeMillis()
 ) {
     fun systemPromptForChat(): String = buildString {
