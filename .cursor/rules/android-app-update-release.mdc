@@ -1,0 +1,103 @@
+---
+description: 应用内更新发版、GitHub Releases 与 app/update.json 配置约定（避免 apkUrl 404）
+globs: app/update.json,app/build.gradle,app/src/main/assets/update_manifest_fallback.json
+alwaysApply: false
+---
+
+# 应用内更新与 GitHub Release 发版约定
+
+涉及 **`app/update.json`**、**`update_manifest_fallback.json`**、**`gh release`** 或用户说「发版 / 上传 Release / 改强更」时，必须遵守本规则。
+
+## 根因（本项目已踩坑）
+
+GitHub Releases 的直链格式为：
+
+```text
+https://github.com/<owner>/<repo>/releases/download/<tag>/<asset-name>
+```
+
+其中 **`<asset-name>` 是 Release 资源的真实文件名（`assets[].name`）**，不是：
+
+- `gh release create` 时写的 `#显示名`（label）
+- 本地文件的中文名、友好名
+- 臆测的路径
+
+错误示例（会 **404**，网络正常也会「直接更新失败」）：
+
+```text
+.../releases/download/v1.5.0-debug/独白匣-v1.5.0-debug.apk   ❌
+```
+
+正确示例（与当前 Release 一致）：
+
+```text
+.../releases/download/v1.5.0-debug/debug.apk   ✅
+```
+
+## 发版必做清单（按顺序）
+
+1. **`app/build.gradle`**：递增 `versionCode`，设置 `versionName`。
+2. **打包**：默认 `assembleDebug`（见 `android-packaging` 规则）；记录输出 APK 路径。
+3. **上传 Release**：
+   - 推荐资源名使用 **纯 ASCII**：如 `debug.apk`、`app-debug-v1.5.0.apk`。
+   - 若用 `gh release create <tag> local.apk#友好名.apk`，**`apkUrl` 必须写 `#` 前的实际 asset 名**（多为 `local.apk` 的文件名，而非 `#` 后别名）。
+4. **发版后立刻核对真实文件名**（不可跳过）：
+
+```powershell
+gh release view <tag> --json assets --jq ".assets[] | {name,label,url}"
+```
+
+以输出中的 **`name`** 为准填写 `apkUrl`（`url` 字段末尾路径与 `name` 一致）。
+
+5. **校验直链可下载**（应返回 200，非 404）：
+
+```powershell
+# 将 <apkUrl> 替换为 update.json 中的地址
+Invoke-WebRequest -Uri "<apkUrl>" -Method Head
+```
+
+6. **计算并写入 `sha256`**（小写十六进制，与 Release 上 digest 一致）：
+
+```powershell
+(Get-FileHash "app\build\outputs\apk\debug\app-debug.apk" -Algorithm SHA256).Hash.ToLower()
+```
+
+7. **同步两份清单**（内容一致）：
+   - `app/update.json`（线上 Raw / 客户端拉取）
+   - `app/src/main/assets/update_manifest_fallback.json`（离线兜底）
+
+8. **`minVersionCode` 策略**：
+   - 须满足 `minVersionCode <= versionCode`。
+   - 若要**强制**已装旧版（含同号不同名）升级：将 `minVersionCode` 提到**新包的 `versionCode`**（例如新包为 8，则 `minVersionCode: 8`，则 versionCode 7 的用户会被强更）。
+   - 仅提高 `versionName` 而 `versionCode` 不变时，旧安装包**不会**收到可选更新。
+
+9. **push 到 `main`** 后再让用户测；必要时更新 `BuildConfig.UPDATE_MANIFEST_URL_MIRROR` 的 commit SHA（见 README「更新策略」）。
+
+## `update.json` 字段约束
+
+| 字段 | 要求 |
+|------|------|
+| `versionCode` | 与本次发布 APK 的 `versionCode` 一致 |
+| `minVersionCode` | 低于此值的客户端强制更新 |
+| `apkUrl` | HTTPS；路径末尾文件名 **必须等于** Release `assets[].name` |
+| `sha256` | 与实际上传 APK 一致；发版后改包必须重算 |
+| `changelog` | 建议 ASCII 或 UTF-8 无 BOM，避免错误编码覆盖 |
+
+## Agent 禁止事项
+
+- 禁止在未执行 `gh release view` 或 HEAD 校验的情况下，手写/猜测 `apkUrl`。
+- 禁止只改 `update.json` 不改 `update_manifest_fallback.json`。
+- 禁止在 `apkUrl` 中使用中文路径或 `#label` 中的显示名。
+- 禁止将已删除的 Release 资源名（如 `独白匣-xxx.apk`）保留在清单中。
+
+## 推荐 Release 命令（减少歧义）
+
+上传时直接让 **asset 名 = 最终 URL 名**：
+
+```powershell
+Copy-Item "app\build\outputs\apk\debug\app-debug.apk" "_local\apks\debug.apk"
+gh release create "v1.5.0-debug" "_local/apks/debug.apk" --title "v1.5.0 Debug" --notes "..."
+# apkUrl 填: .../releases/download/v1.5.0-debug/debug.apk
+```
+
+避免依赖 `file#中文名.apk` 这种易与 `name` 混淆的写法。

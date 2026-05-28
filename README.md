@@ -282,13 +282,17 @@ Debug APK 路径：`app/build/outputs/apk/debug/app-debug.apk`
 
 ### 发版对照清单
 
+> 详细约定与踩坑说明见 **`.cursor/rules/android-app-update-release.mdc`**（GitHub Release 文件名与 `apkUrl` 必须一致，否则直更 404）。
+
 1. 在 `app/build.gradle` 中设置新版本 `versionCode` / `versionName`，打包并上传 APK（Release 或网盘）。
-2. 编辑 **`app/update.json`** 并 push 到 **`main`**：
+2. 用 `gh release view <tag> --json assets` 确认 **`assets[].name`**（不是 label），`apkUrl` 末尾文件名必须与之相同。
+3. 编辑 **`app/update.json`** 并 push 到 **`main`**：
    - `versionCode` = 新包 versionCode
-   - `minVersionCode` = 仍允许运行的最低版（**仅在不兼容旧版时提高到新包 versionCode**）
-   - `apkUrl` = 新包下载地址
-3. 同步修改 **`update_manifest_fallback.json`**（与 `update.json` 保持一致）。
-4. 验证：用**低于 `versionCode` 的旧包**安装，冷启动或设置里检查更新。
+   - `minVersionCode` = 仍允许运行的最低版（**要强制旧版升级时设为新区 versionCode**）
+   - `apkUrl` = 新包下载地址（发版后用 `Invoke-WebRequest -Method Head` 验证非 404）
+   - `sha256` = 新 APK 的 SHA-256（小写）
+4. 同步修改 **`update_manifest_fallback.json`**（与 `update.json` 保持一致）。
+5. 验证：用**低于 `versionCode` 的旧包**安装，冷启动或设置里检查更新。
 
 ### 示例（当前线上配置）
 

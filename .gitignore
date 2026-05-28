@@ -9,7 +9,10 @@ local.properties
 .cxx/
 
 # Cursor / local
-.cursor/
+.cursor/*
+!.cursor/rules/
+.cursor/rules/*
+!.cursor/rules/android-app-update-release.mdc
 .android/
 
 # Local-only artifacts (logs, APK copies, SDK zips)
