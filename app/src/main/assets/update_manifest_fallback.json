@@ -1,9 +1,9 @@
 {
   "versionCode": 8,
   "versionName": "1.5.0",
-  "minVersionCode": 7,
+  "minVersionCode": 8,
   "apkUrl": "https://github.com/Squemadylan/TalkChatBot/releases/download/v1.5.0-debug/独白匣-v1.5.0-debug.apk",
-  "changelog": "v1.5.0：豆包 TTS 朗读、语音输入、聊天搜索/收藏/导出、角色自动朗读。versionCode 低于 7 将强制更新。",
+  "changelog": "v1.5.0：豆包 TTS 朗读、语音输入、聊天搜索/收藏/导出、角色自动朗读。请立即更新至本版本（含 1.2.1 用户强制升级）。",
   "sha256": "39c5717d3bc36ec5adad46078b60f714813321fb0c4b114a16a637033f7223e9",
   "manualUpdateUrl": "https://pan.quark.cn/s/a41944831659"
 }
