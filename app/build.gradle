@@ -16,10 +16,8 @@ android {
         versionCode 8
         versionName "1.5.0"
 
-        // 与仓库 app/update.json 对应；镜像与 assets 兜底用于 GitHub 不可达（如国内网络）
         buildConfigField "String", "UPDATE_MANIFEST_URL",
                 "\"https://raw.githubusercontent.com/Squemadylan/TalkChatBot/main/app/update.json\""
-        // 使用 commit SHA 避免 @main 被 jsDelivr 长期缓存旧配置；发版改 update.json 后请同步更新此 SHA
         buildConfigField "String", "UPDATE_MANIFEST_URL_MIRROR",
                 "\"https://cdn.jsdelivr.net/gh/Squemadylan/TalkChatBot@ae286ac/app/update.json\""
 
@@ -35,7 +33,6 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            // 真机常见 ARM；去掉 x86/x86_64 可明显减小 release APK（x86 模拟器请用 debug 包）
             ndk {
                 abiFilters 'armeabi-v7a', 'arm64-v8a'
             }
@@ -102,6 +99,14 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
     implementation 'io.noties.markwon:core:4.6.2'
+
+    // ---- 4 层记忆向量索引 ----
+    // sqliteai/sqlite-vector 的 Android 预编译：提供 libvector.so + vector_init / vector_quantize_scan。
+    implementation 'ai.sqlite:vector:0.9.94'
+    // requery/sqlite-android 是 Android 上少数支持 SQLiteCustomExtension 加载动态扩展的 SQLite 重打包版；
+    // 只用于「向量索引」这一个 sqlite 文件，不影响 Room（Room 走 androidx SQLite）。
+    // AAR 通过 JitPack 分发（见 settings.gradle）。
+    implementation 'com.github.requery:sqlite-android:3.45.0'
 
     kapt 'androidx.room:room-compiler:2.6.1'
 

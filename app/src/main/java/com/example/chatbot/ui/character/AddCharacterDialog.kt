@@ -12,6 +12,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.lifecycleScope
 import com.example.chatbot.R
 import com.example.chatbot.data.model.Character
 import com.example.chatbot.databinding.DialogAddCharacterBinding
@@ -21,6 +22,7 @@ import com.example.chatbot.ui.common.DEFAULT_INPUT_MAX_LENGTH
 import com.example.chatbot.ui.common.MULTILINE_DEFAULT_VISIBLE_LINES
 import com.example.chatbot.ui.common.showTextInputPrompt
 import com.example.chatbot.util.AvatarStorage
+import kotlinx.coroutines.launch
 
 class AddCharacterDialog(
     private val existingCharacter: Character? = null,
@@ -85,6 +87,26 @@ class AddCharacterDialog(
         
         binding.switchLongTermMemory.isChecked = enableLongTermMemory
         binding.switchAutoRead.isChecked = enableAutoRead
+        refreshMemorySummary()
+        binding.btnResetCharacterMemory.setOnClickListener {
+            val targetId = existingCharacter?.id ?: 0L
+            if (targetId <= 0L) {
+                showToast("保存角色后才能重置该角色的记忆")
+                return@setOnClickListener
+            }
+            com.example.chatbot.ui.common.ConfirmDialog(
+                title = "重置角色记忆",
+                message = "将删除该角色下的 4 层记忆文件与向量索引，不可恢复。继续？",
+                positiveText = "重置",
+                onConfirm = {
+                    val ctx = requireContext().applicationContext
+                    kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                        com.example.chatbot.memory.MemoryPipeline.resetCharacter(ctx, targetId)
+                    }
+                    showToast("已请求重置记忆")
+                }
+            ).show(parentFragmentManager, "ResetCharMemory_$targetId")
+        }
 
         binding.rowAlternate.root.visibility = View.GONE
         binding.rowExamples.root.visibility = View.GONE
@@ -189,6 +211,39 @@ class AddCharacterDialog(
         binding.rowOpening.rowValue.text =
             if (openingGreeting.isBlank()) "无开场白" else previewLine(openingGreeting)
     }
+
+    private fun refreshMemorySummary() {
+        val targetId = existingCharacter?.id ?: 0L
+        if (targetId <= 0L) {
+            binding.tvMemoryLayersSummary.text =
+                "开启后自动抽取 L1 原子、聚类 L2 场景、归纳 L3 画像"
+            return
+        }
+        viewLifecycleScopeOrNull()?.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val ctx = context?.applicationContext ?: return@launch
+            val persona = com.example.chatbot.memory.layers.L3PersonaUpdater.loadForCharacter(ctx, targetId)
+            val scens = com.example.chatbot.memory.layers.L2ScenarioClusterer.loadAllScenarios(ctx, targetId)
+            val atoms = runCatching {
+                com.example.chatbot.memory.AtomJsonl.readAll(
+                    com.example.chatbot.memory.MemoryPaths.atomsJsonl(ctx, targetId)
+                )
+            }.getOrDefault(emptyList())
+            val canvas = com.example.chatbot.memory.layers.ShortTermCanvas.loadCanvasText(ctx, targetId)
+            val canvasLines = if (canvas.isBlank()) 0 else canvas.lines().count { it.contains("[") }
+            val text = buildString {
+                append("L1 原子 ").append(atoms.size)
+                append("  ·  L2 场景 ").append(scens.size)
+                append("  ·  L3 画像 ")
+                append(if (persona.content.isBlank()) "未生成" else "已生成")
+                append("  ·  画布节点 ").append(canvasLines)
+            }
+            viewLifecycleScopeOrNull()?.launch(kotlinx.coroutines.Dispatchers.Main) {
+                if (::binding.isInitialized) binding.tvMemoryLayersSummary.text = text
+            }
+        }
+    }
+
+    private fun viewLifecycleScopeOrNull() = try { viewLifecycleOwner.lifecycleScope } catch (e: Exception) { null }
 
     private fun previewLine(text: String): String {
         val line = text.trim().lineSequence().firstOrNull()?.trim().orEmpty()

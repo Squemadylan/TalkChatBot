@@ -13,6 +13,9 @@ interface CharacterDao {
     @Query("SELECT * FROM characters ORDER BY createdAt DESC")
     fun getAllCharacters(): Flow<List<Character>>
 
+    @Query("SELECT * FROM characters ORDER BY createdAt DESC")
+    suspend fun getAllCharactersOnce(): List<Character>
+
     @Query("SELECT * FROM characters WHERE id = :id")
     suspend fun getCharacterById(id: Long): Character?
 

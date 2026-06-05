@@ -6,6 +6,9 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.room.Room
 import com.example.chatbot.database.AppDatabase
+import com.example.chatbot.data.repository.ApiConfigRepository
+import com.example.chatbot.data.repository.CharacterRepository
+import com.example.chatbot.memory.MemoryPipeline
 import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
@@ -19,6 +22,14 @@ class App : Application(), Thread.UncaughtExceptionHandler {
     val database: AppDatabase
         get() = _database ?: throw IllegalStateException("Database not initialized. App may be in an unstable state.")
 
+    /** 4 层记忆远程 embedding 复用同一份 Chat API 配置；这里直接暴露给工厂用。 */
+    lateinit var apiConfigRepository: ApiConfigRepository
+        private set
+
+    /** 设置页「立即刷新 L1/L2/L3」需要列角色，这里暴露给 UI 层。 */
+    lateinit var characterRepository: CharacterRepository
+        private set
+
     private var isInitializing = false
 
     private var systemDefaultExceptionHandler: Thread.UncaughtExceptionHandler? = null
@@ -30,6 +41,8 @@ class App : Application(), Thread.UncaughtExceptionHandler {
         systemDefaultExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler(this)
         initializeDatabase()
+        // v2.0：4 层记忆管线预热（异步；旧数据迁移、embedder 加载）
+        MemoryPipeline.initOnce(this)
     }
 
     private fun applySavedNightMode() {
@@ -41,7 +54,7 @@ class App : Application(), Thread.UncaughtExceptionHandler {
     private fun initializeDatabase() {
         try {
             isInitializing = true
-            _database = Room.databaseBuilder(
+            val db = Room.databaseBuilder(
                 applicationContext,
                 AppDatabase::class.java,
                 DATABASE_NAME
@@ -50,6 +63,9 @@ class App : Application(), Thread.UncaughtExceptionHandler {
                 .addMigrations(AppDatabase.MIGRATION_3_4)
                 .addMigrations(AppDatabase.MIGRATION_4_5)
                 .build()
+            _database = db
+            apiConfigRepository = ApiConfigRepository(db.apiConfigDao())
+            characterRepository = CharacterRepository(db.characterDao())
             isInitializing = false
             Log.d(TAG, "Database initialized successfully")
         } catch (e: Exception) {

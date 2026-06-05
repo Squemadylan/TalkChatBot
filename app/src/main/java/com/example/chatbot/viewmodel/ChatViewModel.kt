@@ -26,6 +26,9 @@ import com.example.chatbot.data.network.OpenAiChatResponseReader
 import com.example.chatbot.data.network.RetrofitClient
 import com.example.chatbot.ui.chat.MemoryHubRow
 import com.example.chatbot.util.LongTermMemoryManager
+import com.example.chatbot.memory.MemoryConfig
+import com.example.chatbot.memory.MemoryPipeline
+import com.example.chatbot.memory.PromptBuilder
 import com.example.chatbot.util.ModelDefaultTokens
 import com.example.chatbot.util.UserPromptPlaceholders
 import com.google.gson.Gson
@@ -328,7 +331,7 @@ class ChatViewModel(
 
             val userMessage = Message(characterId = characterId, content = content, isUser = true)
             messageRepository.insertMessage(userMessage)
-            sendApiRequestAndUpdateMessage(characterId, characterPrompt, context)
+            sendApiRequestAndUpdateMessage(characterId, characterPrompt, content, context)
         }
     }
 
@@ -341,7 +344,7 @@ class ChatViewModel(
         }
     }
 
-    private suspend fun sendApiRequestAndUpdateMessage(characterId: Long, characterPrompt: String, context: Context?) {
+    private suspend fun sendApiRequestAndUpdateMessage(characterId: Long, characterPrompt: String, userContent: String, context: Context?) {
         val config = apiConfigRepository.getApiConfig()
         if (config == null || config.baseUrl.isEmpty() || config.apiKey.isEmpty()) {
             withContext(Dispatchers.Main) {
@@ -365,6 +368,7 @@ class ChatViewModel(
         var chatSucceeded = false
         val appCtx = context?.applicationContext
         var longTermMemoryEnabled = false
+        var streamResultRef: Result<String>? = null
 
         try {
             val apiService = RetrofitClient.create(config.baseUrl, config.apiKey)
@@ -402,9 +406,16 @@ class ChatViewModel(
             }
 
             if (longTermMemoryEnabled && appCtx != null) {
-                val longTermMemory = LongTermMemoryManager.getCachedMemoryForChat(appCtx, characterId)
-                if (longTermMemory.isNotBlank()) {
-                    messages.add(MessageRequest("system", "【长期记忆】\n$longTermMemory"))
+                // v2.0：4 层记忆 + Mermaid 画布拼成单一 system 消息
+                val built = PromptBuilder.build(appCtx, characterId, userContent)
+                if (built.systemMessage?.isNotBlank() == true) {
+                    messages.add(MessageRequest("system", built.systemMessage))
+                } else {
+                    // 退化：旧行为
+                    val legacy = LongTermMemoryManager.getCachedMemoryForChat(appCtx, characterId)
+                    if (legacy.isNotBlank()) {
+                        messages.add(MessageRequest("system", "【长期记忆】\n$legacy"))
+                    }
                 }
             }
 
@@ -460,6 +471,7 @@ class ChatViewModel(
                         }
                     }
                 }
+                streamResultRef = streamResult
 
                 val textOut = accumulated.toString().ifBlank { streamResult.getOrNull().orEmpty() }
 
@@ -536,6 +548,23 @@ class ChatViewModel(
             }
             if (chatSucceeded && longTermMemoryEnabled && appCtx != null) {
                 scheduleLongTermMemoryRefresh(appCtx, characterId, config)
+                // v2.0：直接走 4 层 pipeline；不再依赖「每日首次」之类的粗粒度触发
+                val assistantText = accumulated.toString().ifBlank { streamResultRef?.getOrNull().orEmpty() }
+                MemoryPipeline.onTurnComplete(
+                    context = appCtx,
+                    characterId = characterId,
+                    apiConfig = config,
+                    userMessage = Message(characterId = characterId, content = userContent, isUser = true, timestamp = System.currentTimeMillis()),
+                    assistantMessage = Message(
+                        characterId = characterId,
+                        content = assistantText,
+                        isUser = false,
+                        timestamp = System.currentTimeMillis()
+                    ),
+                    historyTail = withContext(Dispatchers.IO) {
+                        runCatching { messageRepository.getAllMessagesByCharacterId(characterId) }.getOrDefault(emptyList())
+                    }
+                )
             }
         }
     }

@@ -33,7 +33,12 @@ object BackupManager {
     private const val BACKUP_FILE_EXTENSION = ".zip"
     private const val CHARACTERS_JSON = "characters.json"
     private const val AVATARS_DIR = "avatars"
+    /**
+     * v3：memories/memory_<id>.md（单文件）
+     * v4：memory/（4 层目录树：characters/<id>/persona.md、scenarios/、atoms/、short_term_canvas.md、refs/，外加根级 persona_global.md）
+     */
     private const val MEMORIES_DIR = "memories"
+    private const val MEMORY_TREE_DIR = "memory"
     /** zip 内用户头像固定文件名，避免与角色 `user_avatar.jpg` 等重名冲突 */
     private const val USER_AVATAR_ZIP_NAME = "user_profile_avatar"
 
@@ -51,7 +56,7 @@ object BackupManager {
     )
 
     data class BackupData(
-        val version: Int = 3,
+        val version: Int = 4,
         val timestamp: Long = System.currentTimeMillis(),
         val characters: List<CharacterBackup>,
         /** 个人资料：显示名、人设、头像；旧备份无此字段则恢复时跳过 */
@@ -211,15 +216,36 @@ object BackupManager {
                     zipOut.closeEntry()
                 }
             }
-            
+
             if (character.enableLongTermMemory) {
-                val memoryFile = File(LongTermMemoryManager.getMemoryFilePath(context, character.id))
-                if (memoryFile.exists()) {
+                // v2.0：打包整个 memory/ 目录树（4 层 + 短时画布）
+                val memRoot = com.example.chatbot.memory.MemoryPaths.characterDir(context, character.id)
+                if (memRoot.exists()) {
+                    memRoot.walkTopDown().filter { it.isFile }.forEach { f ->
+                        val rel = f.absolutePath.removePrefix(memRoot.absolutePath).removePrefix(File.separator)
+                        zipOut.putNextEntry(ZipEntry("$MEMORY_TREE_DIR/characters/${character.id}/$rel"))
+                        FileInputStream(f).use { it.copyTo(zipOut) }
+                        zipOut.closeEntry()
+                    }
+                }
+                // 兼容老格式：仍额外写一份 memory_<id>.md，作为降级路径
+                val legacyFile = File(
+                    context.filesDir,
+                    "long_term_memory/memory_${character.id}.md"
+                )
+                if (legacyFile.exists()) {
                     zipOut.putNextEntry(ZipEntry("$MEMORIES_DIR/memory_${character.id}.md"))
-                    FileInputStream(memoryFile).use { it.copyTo(zipOut) }
+                    FileInputStream(legacyFile).use { it.copyTo(zipOut) }
                     zipOut.closeEntry()
                 }
             }
+        }
+        // 全局 L3 persona
+        val globalPersona = com.example.chatbot.memory.MemoryPaths.globalPersona(context)
+        if (globalPersona.exists()) {
+            zipOut.putNextEntry(ZipEntry("$MEMORY_TREE_DIR/persona_global.md"))
+            FileInputStream(globalPersona).use { it.copyTo(zipOut) }
+            zipOut.closeEntry()
         }
 
         if (userBackup.avatarFileName != null) {
@@ -348,7 +374,10 @@ object BackupManager {
                     mkdirs()
                 }
 
-            // 先解压 zip 内 avatars/ 和 memories/ 下全部文件
+            // 先解压 zip 内 avatars/、memories/、memory/ 目录
+            val memoryTreeRoot = File(context.filesDir, "memory")
+            if (memoryTreeRoot.exists()) memoryTreeRoot.deleteRecursively()
+            memoryTreeRoot.mkdirs()
             ZipInputStream(FileInputStream(backupFile)).use { zipIn ->
                 var entry = zipIn.nextEntry
                 while (entry != null) {
@@ -359,6 +388,11 @@ object BackupManager {
                                 zipIn.copyTo(out)
                             }
                         }
+                    } else if (!entry.isDirectory && entry.name.startsWith("$MEMORY_TREE_DIR/")) {
+                        val rel = entry.name.removePrefix("$MEMORY_TREE_DIR/").removePrefix("/")
+                        val out = File(memoryTreeRoot, rel)
+                        out.parentFile?.mkdirs()
+                        FileOutputStream(out).use { zipIn.copyTo(it) }
                     } else if (!entry.isDirectory && entry.name.startsWith("$MEMORIES_DIR/")) {
                         val simpleName = File(entry.name).name
                         if (simpleName.isNotBlank() && simpleName.endsWith(".md")) {
@@ -405,10 +439,12 @@ object BackupManager {
                             }
 
                             val hasMemoryBackup = hasCharacterMemory(memoryDir, charBackup.id)
+                            val hasMemoryTree = hasCharacterMemoryTree(context, charBackup.id)
                             val newCharacter = charBackup
-                                .toCharacter(enableMemory = charBackup.enableLongTermMemory || hasMemoryBackup)
+                                .toCharacter(enableMemory = charBackup.enableLongTermMemory || hasMemoryBackup || hasMemoryTree)
                                 .copy(avatar = avatarPath)
                             val newCharacterId = characterDao.insertCharacter(newCharacter)
+                            restoreCharacterMemoryTree(context, newCharacterId, charBackup.id)
                             restoreCharacterMemory(
                                 context = context,
                                 memoryDir = memoryDir,
@@ -446,6 +482,35 @@ object BackupManager {
     private fun hasCharacterMemory(memoryDir: File, oldCharacterId: Long): Boolean {
         val oldMemory = File(memoryDir, "memory_$oldCharacterId.md")
         return oldMemory.exists() && oldMemory.length() > 0L
+    }
+
+    private fun hasCharacterMemoryTree(appCtx: android.content.Context, oldCharacterId: Long): Boolean {
+        val dir = java.io.File(
+            com.example.chatbot.memory.MemoryPaths.root(appCtx),
+            "characters/$oldCharacterId"
+        )
+        return dir.exists() && (dir.list()?.isNotEmpty() == true)
+    }
+
+    private fun restoreCharacterMemoryTree(appCtx: android.content.Context, newCharacterId: Long, oldCharacterId: Long) {
+        if (newCharacterId == oldCharacterId) return
+        val src = java.io.File(
+            com.example.chatbot.memory.MemoryPaths.root(appCtx),
+            "characters/$oldCharacterId"
+        )
+        if (!src.exists()) return
+        val dst = com.example.chatbot.memory.MemoryPaths.characterDir(appCtx, newCharacterId)
+        if (dst.exists()) dst.deleteRecursively()
+        src.copyRecursively(dst, overwrite = true)
+        // 把 atoms.jsonl 中指向旧 id 的 characterId 修正到新 id
+        val atomsFile = com.example.chatbot.memory.MemoryPaths.atomsJsonl(appCtx, newCharacterId)
+        if (atomsFile.exists()) {
+            val lines = atomsFile.readLines()
+            val updated = lines.joinToString("\n") { line ->
+                line.replace("\"characterId\":$oldCharacterId", "\"characterId\":$newCharacterId")
+            }
+            atomsFile.writeText(updated, Charsets.UTF_8)
+        }
     }
 
     private suspend fun restoreCharacterMemory(
