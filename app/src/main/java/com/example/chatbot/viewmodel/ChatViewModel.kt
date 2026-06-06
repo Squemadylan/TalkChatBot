@@ -29,6 +29,7 @@ import com.example.chatbot.util.LongTermMemoryManager
 import com.example.chatbot.memory.MemoryConfig
 import com.example.chatbot.memory.MemoryPipeline
 import com.example.chatbot.memory.PromptBuilder
+import com.example.chatbot.push.PushManager
 import com.example.chatbot.util.ModelDefaultTokens
 import com.example.chatbot.util.UserPromptPlaceholders
 import com.google.gson.Gson
@@ -257,7 +258,10 @@ class ChatViewModel(
             }
 
             _isLoading.postValue(true)
-            _errorMessage.postValue("正在手动保存长期记忆...")
+            val toastCtx = appCtx?.applicationContext ?: return@launch
+            withContext(Dispatchers.Main) {
+                Toast.makeText(toastCtx, "正在保存长久记忆...", Toast.LENGTH_SHORT).show()
+            }
             try {
                 if (!isNetworkAvailable(appCtx)) {
                     _errorMessage.postValue("网络不可用，请检查网络连接")
@@ -303,13 +307,31 @@ class ChatViewModel(
                 )
                 val memory = result.getOrNull().orEmpty()
                 if (result.isSuccess && memory.isNotBlank()) {
-                    _errorMessage.postValue("长期记忆已手动保存")
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(toastCtx, "长久记忆已保存", Toast.LENGTH_SHORT).show()
+                    }
+                    // 发送记忆保存成功推送
+                    PushManager.sendMemorySavedNotification(
+                        appCtx,
+                        success = true,
+                        details = "L1/L2/L3已更新"
+                    )
                 } else {
-                    _errorMessage.postValue("长期记忆生成失败，请稍后重试")
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(toastCtx, "长久记忆生成失败", Toast.LENGTH_SHORT).show()
+                    }
+                    // 发送记忆保存失败推送
+                    PushManager.sendMemorySavedNotification(
+                        appCtx,
+                        success = false,
+                        details = "请稍后重试"
+                    )
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Manual long-term memory save failed", e)
-                _errorMessage.postValue("长期记忆保存失败：${e.message}")
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(toastCtx, "保存失败：${e.message}", Toast.LENGTH_SHORT).show()
+                }
             } finally {
                 _isLoading.postValue(false)
             }
@@ -369,6 +391,8 @@ class ChatViewModel(
         val appCtx = context?.applicationContext
         var longTermMemoryEnabled = false
         var streamResultRef: Result<String>? = null
+        // 在try块外获取角色名称，供finally块使用
+        val charNameForPush = characterRepository.getCharacterById(characterId)?.name?.trim() ?: "AI助手"
 
         try {
             val apiService = RetrofitClient.create(config.baseUrl, config.apiKey)
@@ -546,25 +570,37 @@ class ChatViewModel(
             if (sid > 0L) {
                 _assistantMarkdownRefresh.postValue(sid)
             }
-            if (chatSucceeded && longTermMemoryEnabled && appCtx != null) {
-                scheduleLongTermMemoryRefresh(appCtx, characterId, config)
-                // v2.0：直接走 4 层 pipeline；不再依赖「每日首次」之类的粗粒度触发
-                val assistantText = accumulated.toString().ifBlank { streamResultRef?.getOrNull().orEmpty() }
-                MemoryPipeline.onTurnComplete(
-                    context = appCtx,
-                    characterId = characterId,
-                    apiConfig = config,
-                    userMessage = Message(characterId = characterId, content = userContent, isUser = true, timestamp = System.currentTimeMillis()),
-                    assistantMessage = Message(
+            // 无论是否开启长期记忆，只要对话成功就发送推送通知
+            if (chatSucceeded && appCtx != null) {
+                // 如果开启了长期记忆，则执行记忆更新
+                if (longTermMemoryEnabled) {
+                    scheduleLongTermMemoryRefresh(appCtx, characterId, config)
+                    // v2.0：直接走 4 层 pipeline；不再依赖「每日首次」之类的粗粒度触发
+                    val assistantText = accumulated.toString().ifBlank { streamResultRef?.getOrNull().orEmpty() }
+                    MemoryPipeline.onTurnComplete(
+                        context = appCtx,
                         characterId = characterId,
-                        content = assistantText,
-                        isUser = false,
-                        timestamp = System.currentTimeMillis()
-                    ),
-                    historyTail = withContext(Dispatchers.IO) {
-                        runCatching { messageRepository.getAllMessagesByCharacterId(characterId) }.getOrDefault(emptyList())
-                    }
-                )
+                        apiConfig = config,
+                        userMessage = Message(characterId = characterId, content = userContent, isUser = true, timestamp = System.currentTimeMillis()),
+                        assistantMessage = Message(
+                            characterId = characterId,
+                            content = assistantText,
+                            isUser = false,
+                            timestamp = System.currentTimeMillis()
+                        ),
+                        historyTail = withContext(Dispatchers.IO) {
+                            runCatching { messageRepository.getAllMessagesByCharacterId(characterId) }.getOrDefault(emptyList())
+                        }
+                    )
+                }
+                
+                // 只在APP不在前台时才发送AI回复通知
+                // 因为在前台时用户可以直接看到回复，不需要通知提醒
+                if (!App.isAppInForeground) {
+                    val assistantText = accumulated.toString().ifBlank { streamResultRef?.getOrNull().orEmpty() }
+                    val replyPreview = assistantText.take(100).replace("\n", " ")
+                    PushManager.sendAiReplyNotification(appCtx, charNameForPush, replyPreview)
+                }
             }
         }
     }

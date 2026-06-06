@@ -9,6 +9,7 @@ import com.example.chatbot.database.AppDatabase
 import com.example.chatbot.data.repository.ApiConfigRepository
 import com.example.chatbot.data.repository.CharacterRepository
 import com.example.chatbot.memory.MemoryPipeline
+import com.example.chatbot.push.PushManager
 import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
@@ -41,6 +42,8 @@ class App : Application(), Thread.UncaughtExceptionHandler {
         systemDefaultExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler(this)
         initializeDatabase()
+        // 初始化中国手机品牌推送服务
+        PushManager.init(this)
         // v2.0：4 层记忆管线预热（异步；旧数据迁移、embedder 加载）
         MemoryPipeline.initOnce(this)
     }
@@ -109,6 +112,10 @@ class App : Application(), Thread.UncaughtExceptionHandler {
         private const val TAG = "ChatBotApp"
         private const val DATABASE_NAME = "chatbot_db"
         const val PREFS_NAME = "chatbot_prefs"
+        
+        // APP可见性标志：是否在前台
+        @Volatile
+        var isAppInForeground = false
         const val KEY_NIGHT_MODE = "night_mode"
         const val KEY_USER_AVATAR_PATH = "user_avatar_path"
         const val KEY_CHAT_BACKGROUND_PATH = "chat_background_path"

@@ -108,6 +108,38 @@ dependencies {
     // AAR 通过 JitPack 分发（见 settings.gradle）。
     implementation 'com.github.requery:sqlite-android:3.45.0'
 
+    // ============================================
+    // 中国手机品牌推送 SDK 依赖
+    // ============================================
+    // TODO: 在此处添加各品牌的SDK依赖，并配置相应的AppId和AppKey
+    // 
+    // 小米推送 SDK
+    // 申请地址: https://dev.mi.com/xiaomihyperos/ability/mipush
+    // implementation 'com.xiaomi.push:xiaomi-push:版本号'
+    //
+    // 华为 HMS Push SDK
+    // 申请地址: https://developer.huawei.com/consumer/cn/
+    // 需要在华为开发者平台创建应用并下载agconnect-services.json
+    // implementation 'com.huawei.hms:push:版本号'
+    //
+    // OPPO 推送 SDK (HeyTap Push)
+    // 申请地址: https://open.oppomobile.com/
+    // implementation files('libs/OPPOPushSDK-*.aar')
+    //
+    // VIVO 推送 SDK
+    // 申请地址: https://dev.vivo.com.cn/
+    // implementation files('libs/vivo_pushsdk-*.aar')
+    //
+    // 荣耀推送 SDK
+    // 申请地址: https://developer.hihonor.com/cn/
+    // implementation 'com.hihonor.push:honor-push:版本号'
+    //
+    // 魅族推送 SDK (可选)
+    // 申请地址: https://open.flyme.cn/
+    // implementation 'com.meizu.flyme.internet:push:版本号'
+    //
+    // ============================================
+
     kapt 'androidx.room:room-compiler:2.6.1'
 
     testImplementation 'junit:junit:4.13.2'

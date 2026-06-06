@@ -12,6 +12,12 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    
+    <!-- 推送相关权限 -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <queries>
         <intent>
@@ -65,7 +71,83 @@
             android:exported="false"
             android:label="4 层记忆查看"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden" />
-
+        
+        <!-- ============================================ -->
+        <!-- 中国手机品牌推送 SDK 配置 -->
+        <!-- ============================================ -->
+        
+        <!-- 小米推送配置 -->
+        <!-- TODO: 添加实际的小米AppId和AppKey -->
+        <!--
+        <meta-data
+            android:name="MIPUSH_APPID"
+            android:value="your_xiaomi_app_id" />
+        <meta-data
+            android:name="MIPUSH_APPKEY"
+            android:value="your_xiaomi_app_key" />
+        -->
+        
+        <!-- 华为 HMS Push 配置 -->
+        <!-- TODO: 添加华为AppGallery Connect的appid -->
+        <!--
+        <meta-data
+            android:name="com.huawei.hms.client.appid"
+            android:value="appid=your_huawei_app_id" />
+        -->
+        
+        <!-- OPPO 推送配置 -->
+        <!-- TODO: 添加实际的OPPO AppId和AppKey -->
+        <!--
+        <meta-data
+            android:name="com.heytap.mcp.appid"
+            android:value="your_oppo_appid" />
+        <meta-data
+            android:name="com.heytap.mcp.appkey"
+            android:value="your_oppo_appkey" />
+        -->
+        
+        <!-- VIVO 推送配置 -->
+        <!-- TODO: 添加实际的VIVO AppId和AppKey -->
+        <!--
+        <meta-data
+            android:name="com.vivo.push.app_id"
+            android:value="your_vivo_appid" />
+        <meta-data
+            android:name="com.vivo.push.app_key"
+            android:value="your_vivo_appkey" />
+        -->
+        
+        <!-- 荣耀推送配置 -->
+        <!-- TODO: 添加实际的荣耀AppId和AppKey -->
+        <!--
+        <meta-data
+            android:name="com.hihonor.push.appid"
+            android:value="your_honor_appid" />
+        -->
+        
+        <!-- 推送接收器 - 华为 -->
+        <!-- TODO: 根据实际SDK添加Receiver -->
+        <!--
+        <receiver android:name=".push.HuaweiPushReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.huawei.push.action.MESSAGING_EVENT" />
+            </intent-filter>
+        </receiver>
+        -->
+        
+        <!-- 推送接收器 - 小米 -->
+        <!-- TODO: 根据实际SDK添加Receiver -->
+        <!--
+        <receiver android:name=".push.XiaomiPushReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.xiaomi.push.NOTIFICATION_ARRIVED" />
+                <action android:name="com.xiaomi.push.MESSAGING_EVENT" />
+            </intent-filter>
+        </receiver>
+        -->
+        
     </application>
 
 </manifest>
