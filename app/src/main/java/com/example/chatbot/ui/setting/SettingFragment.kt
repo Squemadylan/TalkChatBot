@@ -364,17 +364,18 @@ class SettingFragment : Fragment() {
         val ctx = requireContext().applicationContext
         val app = (ctx as? com.example.chatbot.App) ?: return
         viewLifecycleOwner.lifecycleScope.launch {
-            val chars = runCatching { app.characterRepository.getAllCharactersOnce() }
+            val chars = runCatching { app.characterRepository.allCharactersOnce() }
                 .getOrDefault(emptyList())
             if (chars.isEmpty()) {
                 showToast("还没有角色，先去添加一个吧")
                 return@launch
             }
-            val labels = chars.map { "${it.name}（id=${it.id}）" }.toTypedArray()
-            val ids = chars.map { it.id }.toLongArray()
+            val labels = chars.map { "${it.name}（id=${it.id}）" }
+            val ids = chars.map { it.id }
+            val app = ctx as com.example.chatbot.App
             AlertDialog.Builder(requireContext())
                 .setTitle("选一个角色立即刷新 L1/L2/L3")
-                .setItems(labels) { dlg, which ->
+                .setItems(labels.toTypedArray()) { dlg, which ->
                     dlg.dismiss()
                     runForceRunFor(ctx, ids[which], labels[which])
                 }
@@ -385,6 +386,7 @@ class SettingFragment : Fragment() {
 
     private fun runForceRunFor(ctx: android.content.Context, characterId: Long, label: String) {
         showToast("开始刷 $label …（会在后台跑 LLM，约几秒到十几秒）")
+        val app = ctx as com.example.chatbot.App
         viewLifecycleOwner.lifecycleScope.launch {
             val cfg = runCatching { app.apiConfigRepository.getApiConfig() }.getOrNull()
             if (cfg == null || cfg.apiKey.isBlank() || cfg.baseUrl.isBlank()) {

@@ -67,4 +67,7 @@ interface MessageDao {
 
     @Query("SELECT * FROM messages WHERE characterId = :characterId AND content LIKE '%' || :query || '%' ORDER BY timestamp ASC")
     suspend fun searchMessages(characterId: Long, query: String): List<Message>
+
+    @Query("UPDATE messages SET content = content || :content WHERE id = :id")
+    suspend fun appendStreamContent(id: Long, content: String)
 }

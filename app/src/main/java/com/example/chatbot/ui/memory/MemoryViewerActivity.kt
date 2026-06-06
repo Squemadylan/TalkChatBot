@@ -91,7 +91,7 @@ class MemoryViewerActivity : AppCompatActivity() {
             binding.container.addView(muted("(暂无角色)"))
             return
         }
-        list forEach { c ->
+        list.forEach { c ->
             binding.container.addView(divider())
             binding.container.addView(header("「${c.name}」(${c.id})"))
             if (!c.enableLongTermMemory) {

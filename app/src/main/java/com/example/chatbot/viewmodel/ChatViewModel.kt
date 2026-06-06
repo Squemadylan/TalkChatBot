@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.HttpException
@@ -492,7 +493,8 @@ class ChatViewModel(
                 .build()
 
             try {
-                val call = apiService.getOkHttpClient().newCall(httpRequest)
+                val httpClient = RetrofitClient.createOkHttpClient(config.apiKey, logBodies = false)
+                val call = httpClient.newCall(httpRequest)
                 val response = call.execute()
 
                 try {
@@ -500,6 +502,7 @@ class ChatViewModel(
                         val body = response.body
                         if (body != null) {
                             val source = body.source()
+                            val gson = Gson()
                             while (true) {
                                 val line = source.readUtf8Line() ?: break
                                 if (line.isBlank()) continue
@@ -507,8 +510,8 @@ class ChatViewModel(
                                 if (line.startsWith("data: ")) {
                                     val json = line.substring(6)
                                     try {
-                                        val reader = OpenAiChatResponseReader(json)
-                                        reader.onContent { content ->
+                                        val content = extractDeltaContent(json, gson)
+                                        if (content.isNotBlank()) {
                                             accumulated.append(content)
                                             receivedChunk = true
                                             viewModelScope.launch(Dispatchers.IO) {
@@ -540,7 +543,7 @@ class ChatViewModel(
                         }
                     }
                 } finally {
-                    httpResponse.close()
+                    response.close()
                 }
             } catch (e: HttpException) {
                 val errorMsg = when (e.code()) {
@@ -726,6 +729,21 @@ class ChatViewModel(
             urlPattern.matches(url) || url.startsWith("http://") || url.startsWith("https://")
         } catch (e: Exception) {
             false
+        }
+    }
+
+    /** 从 SSE JSON 行中提取 delta content */
+    private fun extractDeltaContent(jsonLine: String, gson: Gson): String {
+        return try {
+            val obj = gson.fromJson(jsonLine, com.google.gson.JsonObject::class.java) ?: return ""
+            val choices = obj.getAsJsonArray("choices") ?: return ""
+            if (choices.size() == 0) return ""
+            val c0 = choices[0].asJsonObject
+            val delta = c0.getAsJsonObject("delta") ?: return ""
+            if (!delta.has("content") || delta.get("content").isJsonNull) return ""
+            delta.get("content").asString ?: ""
+        } catch (_: Exception) {
+            ""
         }
     }
 

@@ -63,4 +63,9 @@ class MessageRepository(private val messageDao: MessageDao) {
     suspend fun searchMessages(characterId: Long, query: String): List<Message> {
         return messageDao.searchMessages(characterId, query)
     }
+
+    /** 流式输出时追加内容（避免频繁写入，每次累加后统一更新） */
+    suspend fun appendStreamContent(messageId: Long, content: String) {
+        messageDao.appendStreamContent(messageId, content)
+    }
 }
