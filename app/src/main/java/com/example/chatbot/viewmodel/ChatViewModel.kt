@@ -252,12 +252,12 @@ class ChatViewModel(
         val appCtx = context?.applicationContext
         viewModelScope.launch(Dispatchers.IO) {
             if (activeStreamingAssistantMessageId > 0L) {
-                _errorMessage.postValue("当前回复还没结束，请稍后再保存长期记忆")
+                _errorMessage.postValue("当前回复还没结束，请稍后再保存记忆")
                 return@launch
             }
 
             _isLoading.postValue(true)
-            _errorMessage.postValue("正在手动保存长期记忆...")
+            _errorMessage.postValue("正在手动更新记忆...")
             try {
                 if (!isNetworkAvailable(appCtx)) {
                     _errorMessage.postValue("网络不可用，请检查网络连接")
@@ -271,11 +271,11 @@ class ChatViewModel(
 
                 val character = characterRepository.getCharacterById(characterId)
                 if (character == null) {
-                    _errorMessage.postValue("角色不存在，无法保存长期记忆")
+                    _errorMessage.postValue("角色不存在，无法保存记忆")
                     return@launch
                 }
                 if (!character.enableLongTermMemory) {
-                    _errorMessage.postValue("请先在角色编辑中开启长期记忆")
+                    _errorMessage.postValue("请先在角色编辑中开启永久记忆")
                     return@launch
                 }
 
@@ -291,25 +291,60 @@ class ChatViewModel(
 
                 val allMessages = messageRepository.getAllMessagesByCharacterId(characterId)
                 if (allMessages.size < MIN_MESSAGES_FOR_MANUAL_MEMORY) {
-                    _errorMessage.postValue("对话太少，至少需要 $MIN_MESSAGES_FOR_MANUAL_MEMORY 条消息再保存长期记忆")
+                    _errorMessage.postValue("对话太少，至少需要 $MIN_MESSAGES_FOR_MANUAL_MEMORY 条消息再保存记忆")
                     return@launch
                 }
 
-                val result = LongTermMemoryManager.forceRegenerateMemory(
-                    context = appCtx,
-                    characterId = characterId,
-                    messages = allMessages,
-                    apiConfig = config
-                )
-                val memory = result.getOrNull().orEmpty()
-                if (result.isSuccess && memory.isNotBlank()) {
-                    _errorMessage.postValue("长期记忆已手动保存")
+                // 先尝试使用新的四层记忆系统
+                var success = false
+                try {
+                    com.example.chatbot.memory.MemoryPipeline.forceRunAll(
+                        context = appCtx,
+                        characterId = characterId,
+                        apiConfig = config,
+                        onDone = { msg ->
+                            viewModelScope.launch(Dispatchers.Main) {
+                                if (msg.contains("失败")) {
+                                    _errorMessage.value = "记忆更新遇到问题"
+                                } else {
+                                    _errorMessage.value = "四层记忆已更新"
+                                }
+                            }
+                        }
+                    )
+                    success = true
+                } catch (e: Exception) {
+                    Log.w(TAG, "四层记忆手动更新失败，尝试旧系统", e)
+                }
+
+                // 如果四层记忆失败，尝试旧系统作为降级方案
+                if (!success) {
+                    val result = LongTermMemoryManager.forceRegenerateMemory(
+                        context = appCtx,
+                        characterId = characterId,
+                        messages = allMessages,
+                        apiConfig = config
+                    )
+                    val memory = result.getOrNull().orEmpty()
+                    if (result.isSuccess && memory.isNotBlank()) {
+                        _errorMessage.postValue("记忆已手动保存")
+                    } else {
+                        _errorMessage.postValue("记忆保存失败，请稍后重试")
+                    }
                 } else {
-                    _errorMessage.postValue("长期记忆生成失败，请稍后重试")
+                    // 同时也更新旧系统，保持兼容性
+                    try {
+                        LongTermMemoryManager.forceRegenerateMemory(
+                            context = appCtx,
+                            characterId = characterId,
+                            messages = allMessages,
+                            apiConfig = config
+                        )
+                    } catch (_: Exception) { }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Manual long-term memory save failed", e)
-                _errorMessage.postValue("长期记忆保存失败：${e.message}")
+                Log.e(TAG, "Manual memory save failed", e)
+                _errorMessage.postValue("记忆保存失败：${e.message}")
             } finally {
                 _isLoading.postValue(false)
             }
@@ -447,164 +482,156 @@ class ChatViewModel(
             )
 
             val base = RetrofitClient.normalizeApiBaseUrl(config.baseUrl)
-            val gson = Gson()
-            Log.d(TAG, "Request JSON: ${gson.toJson(request)}")
-            Log.d(TAG, "base=$base")
-            val streamClient = RetrofitClient.createOkHttpClient(config.apiKey, logBodies = false)
-            val jsonMediaType = "application/json; charset=utf-8".toMediaType()
+            val requestBody = Gson().toJson(request).toRequestBody("application/json".toMediaType())
 
             val httpRequest = Request.Builder()
-                .url("${base}chat/completions")
-                .post(gson.toJson(request).toRequestBody(jsonMediaType))
-                .header("Accept", "text/event-stream, application/json")
+                .url("$base/chat/completions")
+                .addHeader("Authorization", "Bearer ${config.apiKey}")
+                .addHeader("Content-Type", "application/json")
+                .post(requestBody)
                 .build()
 
-            val httpResponse = streamClient.newCall(httpRequest).execute()
             try {
-                val streamResult = OpenAiChatResponseReader.consume(httpResponse, gson) { piece ->
-                    if (piece.isNotEmpty()) {
-                        accumulated.append(piece)
-                        messageRepository.updateMessageContent(assistantRowId, accumulated.toString())
-                        if (!receivedChunk) {
-                            receivedChunk = true
-                            _isLoading.postValue(false)
+                val call = apiService.getOkHttpClient().newCall(httpRequest)
+                val response = call.execute()
+
+                try {
+                    if (response.isSuccessful) {
+                        val body = response.body
+                        if (body != null) {
+                            val source = body.source()
+                            while (true) {
+                                val line = source.readUtf8Line() ?: break
+                                if (line.isBlank()) continue
+                                if (line == "data: [DONE]") break
+                                if (line.startsWith("data: ")) {
+                                    val json = line.substring(6)
+                                    try {
+                                        val reader = OpenAiChatResponseReader(json)
+                                        reader.onContent { content ->
+                                            accumulated.append(content)
+                                            receivedChunk = true
+                                            viewModelScope.launch(Dispatchers.IO) {
+                                                messageRepository.appendStreamContent(assistantRowId, content)
+                                            }
+                                        }
+                                    } catch (_: Exception) { }
+                                }
+                            }
+                        }
+                        if (receivedChunk) {
+                            markAssistantCompleted(assistantRowId)
+                            chatSucceeded = true
+                        }
+                    } else {
+                        val errorBody = response.body?.string() ?: "Unknown error"
+                        val errorMsg = when (response.code) {
+                            400 -> "请求参数错误"
+                            401 -> "API密钥无效"
+                            403 -> "无访问权限"
+                            404 -> "API地址不存在"
+                            429 -> "请求过于频繁，请稍后重试"
+                            500 -> "服务器内部错误"
+                            else -> "API请求失败: ${response.code}"
+                        }
+                        markAssistantFailed(assistantRowId, errorMsg)
+                        withContext(Dispatchers.Main) {
+                            _errorMessage.value = errorMsg
                         }
                     }
+                } finally {
+                    httpResponse.close()
                 }
-                streamResultRef = streamResult
-
-                val textOut = accumulated.toString().ifBlank { streamResult.getOrNull().orEmpty() }
-
-                if (textOut.isBlank()) {
-                    markAssistantFailed(assistantRowId, "API返回内容为空")
-                    clearStreamingAssistantIfMatches(assistantRowId)
-                    if (persistNonStreamingReply(characterId, request, apiService, base)) {
-                        chatSucceeded = true
-                        messageRepository.deleteMessageById(assistantRowId)
-                    } else {
-                        withContext(Dispatchers.Main) {
-                            _errorMessage.value = streamResult.exceptionOrNull()?.message
-                                ?: "API返回内容为空"
-                        }
-                    }
-                } else {
-                    markAssistantCompleted(assistantRowId)
-                    if (streamResult.isFailure) {
-                        markAssistantFailed(
-                            assistantRowId,
-                            "回复可能未完整接收：${streamResult.exceptionOrNull()?.message ?: ""}".trim()
-                        )
-                        withContext(Dispatchers.Main) {
-                            _errorMessage.value =
-                                "回复可能未完整接收：${streamResult.exceptionOrNull()?.message ?: ""}"
-                        }
-                    } else {
-                        chatSucceeded = true
-                    }
+            } catch (e: HttpException) {
+                val errorMsg = when (e.code()) {
+                    400 -> "请求参数错误"
+                    401 -> "API密钥无效"
+                    403 -> "无访问权限"
+                    404 -> "API地址不存在"
+                    429 -> "请求过于频繁，请稍后重试"
+                    500 -> "服务器内部错误"
+                    else -> "API请求失败: ${e.code()}"
+                }
+                markAssistantFailed(assistantRowId, errorMsg)
+                withContext(Dispatchers.Main) {
+                    _errorMessage.value = errorMsg
+                }
+            } catch (e: TimeoutException) {
+                markAssistantFailed(assistantRowId, "请求超时，请检查网络或API地址")
+                withContext(Dispatchers.Main) {
+                    _errorMessage.value = "请求超时，请检查网络或API地址"
+                }
+            } catch (e: java.net.UnknownHostException) {
+                markAssistantFailed(assistantRowId, "无法解析域名，请检查API地址")
+                withContext(Dispatchers.Main) {
+                    _errorMessage.value = "无法解析域名，请检查API地址"
+                }
+            } catch (e: java.net.SocketTimeoutException) {
+                markAssistantFailed(assistantRowId, "连接超时，请检查网络")
+                withContext(Dispatchers.Main) {
+                    _errorMessage.value = "连接超时，请检查网络"
+                }
+            } catch (e: Exception) {
+                markAssistantFailed(assistantRowId, "网络请求失败: ${e.message}")
+                withContext(Dispatchers.Main) {
+                    _errorMessage.value = "网络请求失败: ${e.message}"
                 }
             } finally {
-                httpResponse.close()
-            }
-        } catch (e: HttpException) {
-            val errorMsg = when (e.code()) {
-                400 -> "请求参数错误"
-                401 -> "API密钥无效"
-                403 -> "无访问权限"
-                404 -> "API地址不存在"
-                429 -> "请求过于频繁，请稍后重试"
-                500 -> "服务器内部错误"
-                else -> "API请求失败: ${e.code()}"
-            }
-            markAssistantFailed(assistantRowId, errorMsg)
-            withContext(Dispatchers.Main) {
-                _errorMessage.value = errorMsg
-            }
-        } catch (e: TimeoutException) {
-            markAssistantFailed(assistantRowId, "请求超时，请检查网络或API地址")
-            withContext(Dispatchers.Main) {
-                _errorMessage.value = "请求超时，请检查网络或API地址"
-            }
-        } catch (e: java.net.UnknownHostException) {
-            markAssistantFailed(assistantRowId, "无法解析域名，请检查API地址")
-            withContext(Dispatchers.Main) {
-                _errorMessage.value = "无法解析域名，请检查API地址"
-            }
-        } catch (e: java.net.SocketTimeoutException) {
-            markAssistantFailed(assistantRowId, "连接超时，请检查网络")
-            withContext(Dispatchers.Main) {
-                _errorMessage.value = "连接超时，请检查网络"
+                val sid = activeStreamingAssistantMessageId
+                activeStreamingAssistantMessageId = -1L
+                _isLoading.postValue(false)
+                if (sid > 0L) {
+                    _assistantMarkdownRefresh.postValue(sid)
+                }
+                if (chatSucceeded && longTermMemoryEnabled && appCtx != null) {
+                    scheduleLongTermMemoryRefresh(appCtx, characterId, config)
+                    // v2.0：直接走 4 层 pipeline；不再依赖「每日首次」之类的粗粒度触发
+                    val assistantText = accumulated.toString().ifBlank { streamResultRef?.getOrNull().orEmpty() }
+                    MemoryPipeline.onTurnComplete(
+                        context = appCtx,
+                        characterId = characterId,
+                        apiConfig = config,
+                        userMessage = Message(characterId = characterId, content = userContent, isUser = true, timestamp = System.currentTimeMillis()),
+                        assistantMessage = Message(
+                            characterId = characterId,
+                            content = assistantText,
+                            isUser = false,
+                            timestamp = System.currentTimeMillis()
+                        ),
+                        historyTail = withContext(Dispatchers.IO) {
+                            runCatching { messageRepository.getAllMessagesByCharacterId(characterId) }.getOrDefault(emptyList())
+                        }
+                    )
+                }
             }
         } catch (e: Exception) {
-            markAssistantFailed(assistantRowId, "网络请求失败: ${e.message}")
+            markAssistantFailed(assistantRowId, "发生错误: ${e.message}")
             withContext(Dispatchers.Main) {
-                _errorMessage.value = "网络请求失败: ${e.message}"
-            }
-        } finally {
-            val sid = activeStreamingAssistantMessageId
-            activeStreamingAssistantMessageId = -1L
-            _isLoading.postValue(false)
-            if (sid > 0L) {
-                _assistantMarkdownRefresh.postValue(sid)
-            }
-            if (chatSucceeded && longTermMemoryEnabled && appCtx != null) {
-                scheduleLongTermMemoryRefresh(appCtx, characterId, config)
-                // v2.0：直接走 4 层 pipeline；不再依赖「每日首次」之类的粗粒度触发
-                val assistantText = accumulated.toString().ifBlank { streamResultRef?.getOrNull().orEmpty() }
-                MemoryPipeline.onTurnComplete(
-                    context = appCtx,
-                    characterId = characterId,
-                    apiConfig = config,
-                    userMessage = Message(characterId = characterId, content = userContent, isUser = true, timestamp = System.currentTimeMillis()),
-                    assistantMessage = Message(
-                        characterId = characterId,
-                        content = assistantText,
-                        isUser = false,
-                        timestamp = System.currentTimeMillis()
-                    ),
-                    historyTail = withContext(Dispatchers.IO) {
-                        runCatching { messageRepository.getAllMessagesByCharacterId(characterId) }.getOrDefault(emptyList())
-                    }
-                )
+                _errorMessage.value = "发生错误: ${e.message}"
             }
         }
     }
 
-    /** 对话成功后在后台更新长期记忆，不阻塞本次回复。 */
+    /** 对话成功后在后台静默更新四层记忆，不阻塞本次回复，不打扰用户。 */
     private fun scheduleLongTermMemoryRefresh(
         appCtx: Context,
         characterId: Long,
         config: com.example.chatbot.data.model.ApiConfig
     ) {
-        val toastCtx = appCtx.applicationContext
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                // 四层记忆完全静默后台运行，不显示任何Toast提示
                 val allMessages = messageRepository.getAllMessagesByCharacterId(characterId)
-                val success = LongTermMemoryManager.refreshMemoryIfNeeded(
+                LongTermMemoryManager.refreshMemoryIfNeeded(
                     appCtx,
                     characterId,
                     config,
                     allMessages,
-                    onGenerationStarted = {
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(
-                                toastCtx,
-                                toastCtx.getString(R.string.long_term_memory_generating),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
+                    onGenerationStarted = null  // 静默处理，不显示提示
                 )
-                if (success) {
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(
-                            toastCtx,
-                            toastCtx.getString(R.string.long_term_memory_generated),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
             } catch (e: Exception) {
-                Log.e(TAG, "Long-term memory background refresh failed", e)
+                // 静默失败，不打扰用户
+                Log.d(TAG, "四层记忆后台更新失败", e)
             }
         }
     }

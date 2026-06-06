@@ -139,10 +139,12 @@ object MemoryPipeline {
                         summary.append("L1 新增消息=${newOnes.size}\n")
 
                         val newAtoms = L1AtomExtractor.extract(ctx, characterId, apiConfig, newOnes)
-                        summary.append("L1 抽到 atom=${newAtoms.size}，累计=${L1AtomExtractor.totalAtoms(characterId)}\n")
+                        val totalAtomsNow = L1AtomExtractor.loadTotalAtomsFromFile(ctx, characterId)
+                        summary.append("L1 抽到 atom=${newAtoms.size}，累计=${totalAtomsNow}\n")
 
                         val l2Result = L2ScenarioClusterer.cluster(ctx, characterId, apiConfig, newAtoms)
-                        summary.append("L2 新建 scenario=${l2Result.created.size}，更新=${l2Result.updated.size}\n")
+                        val allScenarios = L2ScenarioClusterer.loadAllScenarios(ctx, characterId)
+                        summary.append("L2 新建 scenario=${l2Result.created.size}，累计场景=${allScenarios.size}\n")
 
                         if (l2Result.created.isNotEmpty()) {
                             L3PersonaUpdater.updateForCharacter(
@@ -266,7 +268,8 @@ object MemoryPipeline {
                 }.getOrDefault(emptyList())
 
                 // 4. L2 聚类（串行）
-                if (newAtoms.isNotEmpty() && L1AtomExtractor.totalAtoms(characterId) >= MemoryConfig.l2MinAtoms(context)) {
+                val totalAtoms = L1AtomExtractor.loadTotalAtomsFromFile(context, characterId)
+                if (newAtoms.isNotEmpty() && totalAtoms >= MemoryConfig.l2MinAtoms(context)) {
                     val l2Result = runCatching {
                         L2ScenarioClusterer.cluster(context, characterId, apiConfig, newAtoms)
                     }.getOrNull()

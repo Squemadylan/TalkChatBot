@@ -138,27 +138,81 @@ class MemoryViewerActivity : AppCompatActivity() {
         return try {
             val src = MemoryPaths.root(this)
             if (!src.exists()) return false
-            val zipFile = File(cacheDir, "memory_export_${System.currentTimeMillis()}.zip")
+            val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(java.util.Date())
+            val zipFile = File(cacheDir, "memory_export_$timestamp.zip")
             java.util.zip.ZipOutputStream(java.io.FileOutputStream(zipFile)).use { zos ->
                 src.walkTopDown().filter { it.isFile }.forEach { f ->
-                    val rel = f.absolutePath.removePrefix(src.absolutePath).removePrefix("/")
+                    var rel = f.absolutePath.removePrefix(src.absolutePath).removePrefix("/")
+                    if (rel.startsWith("\\")) {
+                        rel = rel.substring(1)
+                    }
+                    rel = rel.replace("\\", "/")
                     zos.putNextEntry(java.util.zip.ZipEntry(rel))
                     f.inputStream().use { it.copyTo(zos) }
                     zos.closeEntry()
                 }
             }
+            val saved = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                saveToDownloadsQ(zipFile)
+            } else {
+                saveToDownloadsLegacy(zipFile)
+            }
+            if (saved) {
+                return true
+            }
+            // 如果保存到Download目录失败，就尝试分享
             val authority = "$packageName.fileprovider"
             val uri = androidx.core.content.FileProvider.getUriForFile(
                 this@MemoryViewerActivity, authority, zipFile)
             val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                 type = "application/zip"
                 putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                flags = android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
             }
             startActivity(android.content.Intent.createChooser(intent, "导出记忆 zip"))
             true
         } catch (e: Exception) {
             android.util.Log.e("MemoryViewer", "export failed", e)
             false
+        }
+    }
+    
+    private fun saveToDownloadsQ(zipFile: File): Boolean {
+        return try {
+            val contentValues = android.content.ContentValues().apply {
+                put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, zipFile.name)
+                put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "application/zip")
+                put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_DOWNLOADS)
+                put(android.provider.MediaStore.MediaColumns.IS_PENDING, 1)
+            }
+            val contentResolver = contentResolver
+            val uri = contentResolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+                ?: return false
+            contentResolver.openOutputStream(uri).use { os ->
+                zipFile.inputStream().use { it.copyTo(os!!) }
+            }
+            contentValues.clear()
+            contentValues.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0)
+            contentResolver.update(uri, contentValues, null, null)
+            return true
+        } catch (e: Exception) {
+            android.util.Log.e("MemoryViewer", "save to downloads (Q+) failed", e)
+            return false
+        }
+    }
+    
+    private fun saveToDownloadsLegacy(zipFile: File): Boolean {
+        return try {
+            val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+            if (!downloadsDir.exists()) {
+                downloadsDir.mkdirs()
+            }
+            val destFile = File(downloadsDir, zipFile.name)
+            zipFile.copyTo(destFile, overwrite = true)
+            return true
+        } catch (e: Exception) {
+            android.util.Log.e("MemoryViewer", "save to downloads (legacy) failed", e)
+            return false
         }
     }
 

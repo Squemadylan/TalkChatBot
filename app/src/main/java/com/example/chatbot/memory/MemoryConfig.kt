@@ -73,10 +73,10 @@ object MemoryConfig {
         prefs(context).getInt(KEY_L1_MIN_MESSAGES, 5).coerceAtLeast(1)
 
     fun l2EveryNAtoms(context: Context): Int =
-        prefs(context).getInt(KEY_L2_EVERY_N_ATOMS, 50).coerceAtLeast(10)
+        prefs(context).getInt(KEY_L2_EVERY_N_ATOMS, 10).coerceAtLeast(3)
 
     fun l2MinAtoms(context: Context): Int =
-        prefs(context).getInt(KEY_L2_MIN_ATOMS, 20).coerceAtLeast(5)
+        prefs(context).getInt(KEY_L2_MIN_ATOMS, 5).coerceAtLeast(3)
 
     fun l3EveryNAtomsGlobal(context: Context): Int =
         prefs(context).getInt(KEY_L3_EVERY_N_ATOMS_GLOBAL, 50).coerceAtLeast(10)

@@ -140,8 +140,23 @@ object L1AtomExtractor {
         return cur.lastExtractedMessageId
     }
 
-    fun totalAtoms(characterId: Long): Int =
-        metaCache.get()[characterId]?.totalAtoms ?: 0
+    fun totalAtoms(characterId: Long): Int {
+        metaCache.get()[characterId]?.let { return it.totalAtoms }
+        return 0
+    }
+
+    fun loadTotalAtomsFromFile(context: Context, characterId: Long): Int {
+        val file = MemoryPaths.atomsMeta(context, characterId)
+        if (!file.exists()) return 0
+        val o = runCatching { JSONObject(file.readText()) }.getOrNull() ?: return 0
+        val total = o.optInt("totalAtoms", 0)
+        val meta = metaCache.get().toMutableMap()
+        val cur = meta[characterId] ?: AtomsMeta()
+        cur.totalAtoms = total
+        meta[characterId] = cur
+        metaCache.set(meta)
+        return total
+    }
 
     fun reset(characterId: Long) {
         val m = metaCache.get().toMutableMap()
