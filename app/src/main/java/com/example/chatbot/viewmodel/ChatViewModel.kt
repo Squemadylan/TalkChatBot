@@ -575,34 +575,16 @@ class ChatViewModel(
         characterId: Long,
         config: com.example.chatbot.data.model.ApiConfig
     ) {
-        val toastCtx = appCtx.applicationContext
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val allMessages = messageRepository.getAllMessagesByCharacterId(characterId)
-                val success = LongTermMemoryManager.refreshMemoryIfNeeded(
+                LongTermMemoryManager.refreshMemoryIfNeeded(
                     appCtx,
                     characterId,
                     config,
                     allMessages,
-                    onGenerationStarted = {
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(
-                                toastCtx,
-                                toastCtx.getString(R.string.long_term_memory_generating),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
+                    onGenerationStarted = null
                 )
-                if (success) {
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(
-                            toastCtx,
-                            toastCtx.getString(R.string.long_term_memory_generated),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
             } catch (e: Exception) {
                 Log.e(TAG, "Long-term memory background refresh failed", e)
             }
