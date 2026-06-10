@@ -53,9 +53,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // 标记APP在前台
-        App.isAppInForeground = true
-        
         applyStatusBarSettings()
         if (!startupUpdateCheckDone) {
             startupUpdateCheckDone = true
@@ -69,12 +66,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    override fun onPause() {
-        super.onPause()
-        // 标记APP不在前台
-        App.isAppInForeground = false
-    }
-
     private fun initializeNavigation() {
         try {
             val navHostFragment = supportFragmentManager
@@ -116,7 +107,10 @@ class MainActivity : AppCompatActivity() {
                         true
                     }
                     R.id.chatFragment -> {
-                        navController.navigate(R.id.chatFragment, Bundle().apply { putLong("characterId", 0L) })
+                        navController.navigate(
+                            R.id.chatFragment,
+                            Bundle().apply { putLong(ChatFragment.ARG_CHARACTER_ID, 0L) }
+                        )
                         true
                     }
                     R.id.configFragment -> {

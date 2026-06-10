@@ -209,6 +209,79 @@
 
         </LinearLayout>
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card_radius"
+            android:padding="@dimen/kd_space_500"
+            android:layout_marginBottom="@dimen/kd_space_400">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/config_embed_section_title"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/kd_font_large"
+                android:textStyle="bold"
+                android:layout_marginBottom="@dimen/kd_space_200"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/config_embed_section_hint"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/kd_font_small"
+                android:lineSpacingExtra="2dp"
+                android:layout_marginBottom="@dimen/kd_space_400"/>
+
+            <EditText
+                android:id="@+id/etEmbedModel"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/kd_input_height"
+                android:hint="@string/config_embed_model_hint"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_secondary"
+                android:background="@drawable/bg_input_radius"
+                android:maxLength="500"
+                android:paddingHorizontal="@dimen/kd_space_400"
+                android:textSize="@dimen/kd_font_middle"
+                android:layout_marginBottom="@dimen/kd_space_300"
+                android:inputType="text"/>
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/kd_input_height">
+
+                <EditText
+                    android:id="@+id/etEmbedApiKey"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:hint="@string/config_embed_api_key_hint"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_secondary"
+                    android:background="@drawable/bg_input_radius"
+                    android:maxLength="500"
+                    android:paddingStart="@dimen/kd_space_400"
+                    android:paddingEnd="48dp"
+                    android:textSize="@dimen/kd_font_middle"
+                    android:inputType="text"
+                    android:importantForAutofill="no" />
+
+                <ImageButton
+                    android:id="@+id/btnToggleEmbedApiKeyVisibility"
+                    android:layout_width="@dimen/kd_touch_min"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="end|center_vertical"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/config_toggle_embed_api_key_visibility"
+                    android:padding="@dimen/kd_space_300"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_visibility_off" />
+            </FrameLayout>
+
+        </LinearLayout>
+
         <!-- 配置摘要卡片 -->
         <LinearLayout
             android:layout_width="match_parent"

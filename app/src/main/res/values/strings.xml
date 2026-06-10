@@ -13,6 +13,13 @@
     <string name="config_effective_empty">尚未保存配置；填写后离开本页将自动保存</string>
     <string name="config_save_failed">配置保存失败，请重试</string>
 
+    <string name="config_embed_section_title">记忆向量（Embedding）</string>
+    <string name="config_embed_section_hint">用于四层记忆的语义召回，调用 OpenAI 兼容的 /embeddings 接口。模型名需与当前 API 服务商支持的 embedding 模型一致。</string>
+    <string name="config_embed_model_hint">记忆向量模型（留空则按 Base URL 自动推荐）</string>
+    <string name="config_embed_api_key_hint">记忆向量 API 密钥（默认与上方对话密钥相同）</string>
+    <string name="config_toggle_embed_api_key_visibility">显示或隐藏记忆向量 API 密钥</string>
+    <string name="config_embed_failure_toast">记忆向量请求失败：请在「配置」页检查记忆向量模型与 API 密钥，或更换支持 /embeddings 的服务商。</string>
+
     <string name="long_term_memory_generating">正在生成永久记忆，请稍候…</string>
     <string name="long_term_memory_generated">永久记忆已生成完毕</string>
 

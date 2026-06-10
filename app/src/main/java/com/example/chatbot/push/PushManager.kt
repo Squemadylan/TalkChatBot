@@ -101,7 +101,7 @@ object PushManager {
                 initHuaweiPush(context)
                 
                 // OPPO推送初始化
-                initOPPOush(context)
+                initOppoPush(context)
                 
                 // VIVO推送初始化
                 initVivoPush(context)
@@ -160,7 +160,7 @@ object PushManager {
     /**
      * OPPO推送初始化
      */
-    private suspend fun initOPPOush(context: Context) {
+    private suspend fun initOppoPush(context: Context) {
         withContext(Dispatchers.IO) {
             try {
                 // TODO: 添加OPPO SDK依赖后启用

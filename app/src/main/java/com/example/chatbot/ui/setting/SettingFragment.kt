@@ -69,7 +69,7 @@ class SettingFragment : Fragment() {
                 .edit()
                 .putString(App.KEY_USER_AVATAR_PATH, path)
                 .apply()
-            AvatarStorage.loadInto(binding!!.ivAvatar, path)
+            binding?.ivAvatar?.let { AvatarStorage.loadInto(it, path) }
             showToast("头像已更新")
         } else {
             showToast("保存头像失败")
@@ -107,7 +107,7 @@ class SettingFragment : Fragment() {
             if (isAdded && context != null) {
                 Toast.makeText(requireContext(), "设置页面加载失败", Toast.LENGTH_SHORT).show()
             }
-            View(requireContext())
+            android.widget.FrameLayout(container?.context ?: inflater.context)
         }
     }
 
@@ -317,41 +317,6 @@ class SettingFragment : Fragment() {
             prefs().edit().putBoolean(App.KEY_CHAT_SHOW_AVATARS, checked).apply()
         }
 
-        // v2.0 4 层记忆开关
-        binding?.switchFourTierMemory?.setOnCheckedChangeListener(null)
-        binding?.switchFourTierMemory?.isChecked =
-            com.example.chatbot.memory.MemoryConfig.isEnabled(requireContext().applicationContext)
-        binding?.switchFourTierMemory?.setOnCheckedChangeListener { _, checked ->
-            com.example.chatbot.memory.MemoryConfig.setEnabled(requireContext().applicationContext, checked)
-            showToast(if (checked) "已开启 4 层记忆" else "已关闭 4 层记忆")
-        }
-
-        // offload mild 阈值
-        val ctx = requireContext().applicationContext
-        val mildNow = (com.example.chatbot.memory.MemoryConfig.offloadMildRatio(ctx) * 100).toInt()
-        binding?.seekOffloadMild?.setOnSeekBarChangeListener(null)
-        binding?.seekOffloadMild?.progress = mildNow.coerceIn(20, 90) - 20
-        binding?.tvOffloadMildValue?.text = String.format("%.2f", mildNow / 100f)
-        binding?.seekOffloadMild?.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
-                val v = (progress + 20) / 100f
-                binding?.tvOffloadMildValue?.text = String.format("%.2f", v)
-                if (fromUser) {
-                    com.example.chatbot.memory.MemoryConfig.prefs(ctx).edit()
-                        .putFloat(com.example.chatbot.memory.MemoryConfig.KEY_OFFLOAD_MILD_RATIO, v)
-                        .apply()
-                }
-            }
-            override fun onStartTrackingTouch(sb: SeekBar?) {}
-            override fun onStopTrackingTouch(sb: SeekBar?) {}
-        })
-
-        // embedding 状态
-        refreshEmbedStatus()
-
-        binding?.tvEmbedBackendValue?.setOnClickListener { showEmbedBackendPicker() }
-        binding?.tvEmbedRemoteModel?.setOnClickListener { showRemoteModelEditor() }
-
         binding?.btnOpenMemoryViewer?.setOnClickListener {
             startActivity(android.content.Intent(requireContext(),
                 com.example.chatbot.ui.memory.MemoryViewerActivity::class.java))
@@ -374,7 +339,7 @@ class SettingFragment : Fragment() {
             val ids = chars.map { it.id }
             val app = ctx as com.example.chatbot.App
             AlertDialog.Builder(requireContext())
-                .setTitle("选一个角色立即刷新 L1/L2/L3")
+                .setTitle("选择要刷新记忆的角色")
                 .setItems(labels.toTypedArray()) { dlg, which ->
                     dlg.dismiss()
                     runForceRunFor(ctx, ids[which], labels[which])
@@ -398,61 +363,25 @@ class SettingFragment : Fragment() {
                 characterId = characterId,
                 apiConfig = cfg,
                 onDone = { summary ->
+                    if (!isAdded || view == null) return@forceRunAll
                     showToast(summary.take(240))
                     AlertDialog.Builder(requireContext())
                         .setTitle("执行摘要 · $label")
                         .setMessage(summary)
                         .setPositiveButton("好", null)
                         .setNeutralButton("打开记忆查看") { _, _ ->
-                            startActivity(android.content.Intent(ctx,
-                                com.example.chatbot.ui.memory.MemoryViewerActivity::class.java))
+                            if (!isAdded) return@setNeutralButton
+                            startActivity(
+                                android.content.Intent(
+                                    ctx,
+                                    com.example.chatbot.ui.memory.MemoryViewerActivity::class.java
+                                )
+                            )
                         }
                         .show()
                 }
             )
         }
-    }
-
-    private fun refreshEmbedStatus() {
-        if (_binding == null) return
-        val ctx = requireContext().applicationContext
-        val tag = com.example.chatbot.memory.embed.EmbedderFactory.tag()
-        val model = if (tag == "remote") com.example.chatbot.memory.MemoryConfig.embedRemoteModel(ctx) else "(无向量)"
-        binding?.tvEmbedStatus?.text = "Embedding 状态：" +
-            if (tag == "bm25") "BM25 兜底（向量召回已禁用；先在 API 设置里填 baseUrl/apiKey）"
-            else "就绪（远程 · $model）"
-        // 后端恒为远程；旧 prefs 里的 "local" / "auto" 已被 MemoryConfig 归一化为 "remote"
-        binding?.tvEmbedBackendValue?.text = "远程（固定）"
-        binding?.tvEmbedRemoteModel?.text = com.example.chatbot.memory.MemoryConfig.embedRemoteModel(ctx)
-        binding?.tvEmbedDim?.text = "向量维度：${com.example.chatbot.memory.MemoryConfig.embedDim(ctx)}" +
-            "（变更会触发 vec index 重建）"
-    }
-
-    private fun showEmbedBackendPicker() {
-        // 不再可选；保留入口只作为「跳到 API 设置」的快捷提示
-        showToast("embedding 仅支持远程（复用 Chat API）。请先在「API 设置」里填 baseUrl/apiKey。")
-    }
-
-    private fun showRemoteModelEditor() {
-        val ctx = requireContext().applicationContext
-        val cur = com.example.chatbot.memory.MemoryConfig.embedRemoteModel(ctx)
-        val edit = android.widget.EditText(requireContext()).apply {
-            setText(cur)
-            hint = "BAAI/bge-large-zh-v1.5 / BAAI/bge-m3 / text-embedding-3-small …"
-        }
-        AlertDialog.Builder(requireContext())
-            .setTitle("远程 embedding 模型")
-            .setView(edit)
-            .setPositiveButton("保存") { _, _ ->
-                val v = edit.text.toString().trim().ifBlank { cur }
-                com.example.chatbot.memory.MemoryConfig.setEmbedRemoteModel(ctx, v)
-                com.example.chatbot.memory.embed.EmbedderFactory.rebuild(ctx)
-                com.example.chatbot.memory.vec.VecIndexFactory.resetAll()
-                refreshEmbedStatus()
-                showToast("已更新为 $v")
-            }
-            .setNegativeButton("取消", null)
-            .show()
     }
 
     private fun refreshChatBackgroundSummary() {
@@ -691,7 +620,7 @@ class SettingFragment : Fragment() {
         }
         if (!ensureLegacyWriteForBackup()) return
 
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
                 showToast("正在备份...")
                 val characterRepository = CharacterRepository(app.database.characterDao())
@@ -726,7 +655,7 @@ class SettingFragment : Fragment() {
             return
         }
 
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
                 showToast("正在恢复...")
                 

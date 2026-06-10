@@ -128,8 +128,8 @@ object MemoryPipeline {
                     e.apply()
 
                     val history = withContext(Dispatchers.IO) {
-                        runCatching { messageRepo().getAllMessagesByCharacterId(characterId) }
-                            .getOrDefault(emptyList())
+                        runCatching { messageRepo()?.getAllMessagesByCharacterId(characterId) }
+                            .getOrNull() ?: emptyList()
                     }
                     if (history.isEmpty()) {
                         summary.append("该角色还没有对话记录")
@@ -182,8 +182,13 @@ object MemoryPipeline {
         }
     }
 
-    private fun messageRepo() = com.example.chatbot.App.getInstance()
-        .let { app -> com.example.chatbot.data.repository.MessageRepository(app.database.messageDao()) }
+    private fun messageRepo(): com.example.chatbot.data.repository.MessageRepository? {
+        return runCatching {
+            val app = com.example.chatbot.App.getInstance()
+            if (!app.isDatabaseInitialized()) return null
+            com.example.chatbot.data.repository.MessageRepository(app.database.messageDao())
+        }.getOrNull()
+    }
 
     /**
      * 对话成功一轮后调用：写 L0 缓存、决定外置、跑 L1/L2/L3、刷新画布。

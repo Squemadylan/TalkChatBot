@@ -2,6 +2,7 @@ package com.example.chatbot.memory
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.example.chatbot.util.EmbeddingModelRecommender
 
 /**
  * 4 层记忆的可调参数。集中存 SharedPreferences，避免散落到各处。
@@ -13,8 +14,7 @@ object MemoryConfig {
 
     private const val PREFS = "memory_pipeline_prefs"
 
-    // ---- 开关 ----
-    /** 4 层记忆总开关。关闭后所有 manager 都降级为 no-op。 */
+    // ---- 开关（已废弃：四层记忆始终开启，保留键名仅作旧 prefs 兼容） ----
     const val KEY_ENABLED = "memory_enabled"
 
     // ---- L1 节奏 ----
@@ -37,7 +37,10 @@ object MemoryConfig {
     const val KEY_RECALL_TIMEOUT_MS = "recall_timeout_ms"
 
     // ---- 短时压缩 ----
-    /** 0.3 ~ 0.9 之间；超过该比例后开始把更早的整段对话外置到 refs/。 */
+    /**
+     * 短时画布外置阈值（默认 0.5）：当已用上下文 token 估算达到窗口的 50% 时，
+     * 把更早的整段对话外置到 refs/，画布只保留节点摘要。
+     */
     const val KEY_OFFLOAD_MILD_RATIO = "offload_mild_ratio"
     /** 0.6 ~ 0.95 之间；超过后节点进一步标题化。 */
     const val KEY_OFFLOAD_AGGRESSIVE_RATIO = "offload_aggressive_ratio"
@@ -58,11 +61,12 @@ object MemoryConfig {
     fun prefs(context: Context): SharedPreferences =
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    fun isEnabled(context: Context): Boolean =
-        prefs(context).getBoolean(KEY_ENABLED, true)
+    /** 四层永久记忆始终开启；按角色是否开启长期记忆由角色卡控制。 */
+    fun isEnabled(context: Context): Boolean = true
 
+    @Deprecated("四层记忆已默认常开，设置页不再提供开关")
     fun setEnabled(context: Context, enabled: Boolean) {
-        prefs(context).edit().putBoolean(KEY_ENABLED, enabled).apply()
+        prefs(context).edit().putBoolean(KEY_ENABLED, true).apply()
     }
 
     // ---- 便捷读默认值 ----
@@ -126,10 +130,12 @@ object MemoryConfig {
         prefs(context).edit().putString(KEY_EMBED_BACKEND, v).apply()
     }
 
+    @Deprecated("改用 ApiConfig.embedModel / effectiveEmbedModel()")
     fun embedRemoteModel(context: Context): String =
-        prefs(context).getString(KEY_EMBED_REMOTE_MODEL, "BAAI/bge-large-zh-v1.5")
-            ?: "BAAI/bge-large-zh-v1.5"
+        prefs(context).getString(KEY_EMBED_REMOTE_MODEL, EmbeddingModelRecommender.SILICONFLOW_DEFAULT)
+            ?: EmbeddingModelRecommender.SILICONFLOW_DEFAULT
 
+    @Deprecated("改用 ApiConfig.embedModel")
     fun setEmbedRemoteModel(context: Context, v: String) {
         prefs(context).edit().putString(KEY_EMBED_REMOTE_MODEL, v).apply()
     }

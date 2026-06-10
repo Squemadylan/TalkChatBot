@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import com.example.chatbot.App
 import com.example.chatbot.data.model.ApiConfig
+import com.example.chatbot.data.model.effectiveEmbedApiKey
+import com.example.chatbot.data.model.effectiveEmbedModel
 import com.example.chatbot.memory.MemoryConfig
 import kotlinx.coroutines.runBlocking
 
@@ -44,9 +46,8 @@ object EmbedderFactory {
 
     private fun buildOnce(context: Context): LocalEmbedder {
         val dim = MemoryConfig.embedDim(context)
-        val remoteModel = MemoryConfig.embedRemoteModel(context)
         val apiConfig = loadApiConfigBlocking(context)
-        val r = pickRemote(apiConfig, remoteModel, dim, context)
+        val r = pickRemote(apiConfig, dim, context)
         if (r != null) {
             lastChosenTag = "remote"
             return r
@@ -64,15 +65,20 @@ object EmbedderFactory {
 
     private fun pickRemote(
         apiConfig: ApiConfig?,
-        model: String,
         dim: Int,
         context: Context
     ): RemoteEmbedder? {
-        if (apiConfig == null || apiConfig.apiKey.isBlank() || apiConfig.baseUrl.isBlank()) {
+        if (apiConfig == null || apiConfig.baseUrl.isBlank()) {
             Log.w(TAG, "remote embedder: no apiConfig yet, skip")
             return null
         }
-        return runCatching { RemoteEmbedder(apiConfig, model, dim) }.getOrElse {
+        if (apiConfig.effectiveEmbedApiKey().isBlank()) {
+            Log.w(TAG, "remote embedder: no embed api key yet, skip")
+            return null
+        }
+        val model = apiConfig.effectiveEmbedModel()
+        val appCtx = context.applicationContext
+        return runCatching { RemoteEmbedder(apiConfig, model, dim, appCtx) }.getOrElse {
             Log.w(TAG, "RemoteEmbedder init failed", it)
             null
         }

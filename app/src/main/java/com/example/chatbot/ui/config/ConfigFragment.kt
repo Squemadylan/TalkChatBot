@@ -27,8 +27,12 @@ import com.example.chatbot.App
 import com.example.chatbot.R
 import com.example.chatbot.data.repository.ApiConfigRepository
 import com.example.chatbot.databinding.FragmentConfigBinding
+import com.example.chatbot.data.model.effectiveEmbedApiKey
+import com.example.chatbot.data.model.isEmbedApiKeyOverridden
+import com.example.chatbot.memory.embed.EmbedderFactory
 import com.example.chatbot.util.ApiCheckResult
 import com.example.chatbot.util.ApiConnectionChecker
+import com.example.chatbot.util.EmbeddingModelRecommender
 import com.example.chatbot.util.ModelDefaultTokens
 import com.example.chatbot.viewmodel.ApiConfigViewModel
 import com.example.chatbot.viewmodel.ApiConfigViewModelFactory
@@ -46,6 +50,10 @@ class ConfigFragment : Fragment() {
     private var viewModel: ApiConfigViewModel? = null
     private var applyingRemoteConfig = false
     private var apiKeyVisible = false
+    private var embedApiKeyVisible = false
+    private var embedModelUserEdited = false
+    private var embedApiKeyOverridden = false
+    private var syncingEmbedKeyFromChat = false
 
     private val autoSaveHandler = Handler(Looper.getMainLooper())
     private val autoSaveRunnable = Runnable { persistConfigAsync() }
@@ -89,6 +97,7 @@ class ConfigFragment : Fragment() {
         setupRegisterSiliconflowButton()
         setupApiKeyVisibilityToggle()
         setupAutoSave()
+        setupEmbedFields()
         setupAutoMaxTokensFromModel()
         setupModelPresetSpinner()
         setupCheckConnection()
@@ -143,8 +152,20 @@ class ConfigFragment : Fragment() {
                     binding?.etModel?.setText(it.model)
                     binding?.etTemperature?.setText(it.temperature.toString())
                     binding?.etMaxTokens?.setText(it.maxTokens.toString())
+                    embedModelUserEdited = it.embedModel.isNotBlank()
+                    embedApiKeyOverridden = it.isEmbedApiKeyOverridden()
+                    val displayEmbedModel = if (embedModelUserEdited) {
+                        it.embedModel
+                    } else {
+                        EmbeddingModelRecommender.recommend(it.baseUrl)
+                    }
+                    binding?.etEmbedModel?.setText(displayEmbedModel)
+                    syncingEmbedKeyFromChat = true
+                    binding?.etEmbedApiKey?.setText(it.effectiveEmbedApiKey())
+                    syncingEmbedKeyFromChat = false
                 }
                 applyApiKeyMasking()
+                applyEmbedApiKeyMasking()
                 updateEffectiveConfigHint(config)
             } catch (e: Exception) {
                 android.util.Log.e(TAG, "Error updating config UI", e)
@@ -200,7 +221,9 @@ class ConfigFragment : Fragment() {
             applyingRemoteConfig = true
             binding?.etBaseUrl?.setText(preset.baseUrl)
             binding?.etModel?.setText(preset.model)
+            applyRecommendedEmbedModelIfNeeded(preset.baseUrl, scheduleSave = false)
             applyingRemoteConfig = false
+            scheduleAutoSave()
             showToastSafe("已应用预设：${preset.name}")
         }
     }
@@ -337,6 +360,65 @@ class ConfigFragment : Fragment() {
         }
     }
 
+    private fun setupEmbedFields() {
+        if (_binding == null) return
+
+        applyEmbedApiKeyMasking()
+        binding?.btnToggleEmbedApiKeyVisibility?.setOnClickListener {
+            embedApiKeyVisible = !embedApiKeyVisible
+            applyEmbedApiKeyMasking()
+        }
+
+        binding?.etBaseUrl?.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                if (applyingRemoteConfig || _binding == null) return
+                applyRecommendedEmbedModelIfNeeded(s?.toString().orEmpty(), scheduleSave = true)
+            }
+        })
+
+        binding?.etApiKey?.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                if (applyingRemoteConfig || _binding == null || embedApiKeyOverridden) return
+                syncingEmbedKeyFromChat = true
+                binding?.etEmbedApiKey?.setText(s?.toString().orEmpty())
+                syncingEmbedKeyFromChat = false
+                scheduleAutoSave()
+            }
+        })
+
+        binding?.etEmbedModel?.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                if (applyingRemoteConfig || _binding == null) return
+                embedModelUserEdited = true
+                scheduleAutoSave()
+            }
+        })
+
+        binding?.etEmbedApiKey?.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                if (applyingRemoteConfig || _binding == null || syncingEmbedKeyFromChat) return
+                val chatKey = binding?.etApiKey?.text?.toString().orEmpty()
+                val embedKey = s?.toString().orEmpty()
+                embedApiKeyOverridden = embedKey.isNotBlank() && embedKey != chatKey
+                scheduleAutoSave()
+            }
+        })
+    }
+
+    private fun applyRecommendedEmbedModelIfNeeded(baseUrl: String, scheduleSave: Boolean) {
+        if (embedModelUserEdited || _binding == null) return
+        binding?.etEmbedModel?.setText(EmbeddingModelRecommender.recommend(baseUrl))
+        if (scheduleSave) scheduleAutoSave()
+    }
+
     private fun applyApiKeyMasking() {
         val editText = binding?.etApiKey ?: return
         val selection = editText.selectionEnd
@@ -350,6 +432,19 @@ class ConfigFragment : Fragment() {
         editText.setSelection(selection.coerceIn(0, editText.text?.length ?: 0))
     }
 
+    private fun applyEmbedApiKeyMasking() {
+        val editText = binding?.etEmbedApiKey ?: return
+        val selection = editText.selectionEnd
+        if (embedApiKeyVisible) {
+            editText.transformationMethod = null
+            binding?.btnToggleEmbedApiKeyVisibility?.setImageResource(R.drawable.ic_visibility)
+        } else {
+            editText.transformationMethod = PasswordTransformationMethod.getInstance()
+            binding?.btnToggleEmbedApiKeyVisibility?.setImageResource(R.drawable.ic_visibility_off)
+        }
+        editText.setSelection(selection.coerceIn(0, editText.text?.length ?: 0))
+    }
+
     private fun setupAutoSave() {
         if (_binding == null) return
 
@@ -358,7 +453,9 @@ class ConfigFragment : Fragment() {
             binding?.etApiKey,
             binding?.etModel,
             binding?.etTemperature,
-            binding?.etMaxTokens
+            binding?.etMaxTokens,
+            binding?.etEmbedModel,
+            binding?.etEmbedApiKey
         )
 
         val watcher = object : TextWatcher {
@@ -370,7 +467,12 @@ class ConfigFragment : Fragment() {
             }
         }
 
-        fields.forEach { it.addTextChangedListener(watcher) }
+        fields.forEach { field ->
+            when (field.id) {
+                R.id.etBaseUrl, R.id.etApiKey, R.id.etEmbedModel, R.id.etEmbedApiKey -> Unit
+                else -> field.addTextChangedListener(watcher)
+            }
+        }
     }
 
     private fun scheduleAutoSave() {
@@ -389,7 +491,9 @@ class ConfigFragment : Fragment() {
                 apiKey = snapshot.apiKey,
                 model = snapshot.model,
                 temperature = snapshot.temperature,
-                maxTokensRaw = snapshot.maxTokensRaw
+                maxTokensRaw = snapshot.maxTokensRaw,
+                embedModel = snapshot.storedEmbedModel,
+                embedApiKey = snapshot.embedApiKey
             )) {
                 is ApiConfigViewModel.PersistResult.Invalid -> {
                     showValidationError(result.error)
@@ -399,6 +503,9 @@ class ConfigFragment : Fragment() {
                 }
                 is ApiConfigViewModel.PersistResult.Success -> {
                     updateEffectiveConfigHint(result.config)
+                    runCatching {
+                        EmbedderFactory.rebuild(requireContext().applicationContext)
+                    }
                 }
             }
         }
@@ -418,7 +525,9 @@ class ConfigFragment : Fragment() {
                 apiKey = snapshot.apiKey,
                 model = snapshot.model,
                 temperature = snapshot.temperature,
-                maxTokensRaw = snapshot.maxTokensRaw
+                maxTokensRaw = snapshot.maxTokensRaw,
+                embedModel = snapshot.storedEmbedModel,
+                embedApiKey = snapshot.embedApiKey
             )
         }
     }
@@ -428,19 +537,26 @@ class ConfigFragment : Fragment() {
         val apiKey: String,
         val model: String,
         val temperature: Double,
-        val maxTokensRaw: String
+        val maxTokensRaw: String,
+        val storedEmbedModel: String,
+        val embedApiKey: String
     )
 
     private fun captureFormSnapshot(): FormSnapshot? {
         if (_binding == null) return null
         val temperature = binding?.etTemperature?.text?.toString()?.trim()?.toDoubleOrNull()
             ?: return null
+        val baseUrl = binding?.etBaseUrl?.text?.toString().orEmpty()
+        val embedModelField = binding?.etEmbedModel?.text?.toString()?.trim().orEmpty()
+        val storedEmbedModel = if (embedModelUserEdited) embedModelField else ""
         return FormSnapshot(
-            baseUrl = binding?.etBaseUrl?.text?.toString().orEmpty(),
+            baseUrl = baseUrl,
             apiKey = binding?.etApiKey?.text?.toString().orEmpty(),
             model = binding?.etModel?.text?.toString().orEmpty(),
             temperature = temperature,
-            maxTokensRaw = binding?.etMaxTokens?.text?.toString().orEmpty()
+            maxTokensRaw = binding?.etMaxTokens?.text?.toString().orEmpty(),
+            storedEmbedModel = storedEmbedModel,
+            embedApiKey = binding?.etEmbedApiKey?.text?.toString().orEmpty()
         )
     }
 
@@ -492,7 +608,12 @@ class ConfigFragment : Fragment() {
             null -> Unit
             is ApiConfigViewModel.PersistResult.Invalid -> showValidationError(result.error)
             is ApiConfigViewModel.PersistResult.Failed -> showToastSafe(getString(R.string.config_save_failed))
-            is ApiConfigViewModel.PersistResult.Success -> updateEffectiveConfigHint(result.config)
+            is ApiConfigViewModel.PersistResult.Success -> {
+                updateEffectiveConfigHint(result.config)
+                context?.applicationContext?.let { ctx ->
+                    runCatching { EmbedderFactory.rebuild(ctx) }
+                }
+            }
         }
         super.onPause()
     }

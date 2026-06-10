@@ -477,176 +477,13 @@
                     android:max="10"
                     android:progress="5" />
 
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/kd_line_regular"
-                    android:layout_marginTop="@dimen/kd_space_400"
-                    android:layout_marginBottom="@dimen/kd_space_300" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="四层永久记忆"
-                            android:textColor="@color/text_primary"
-                            android:textSize="@dimen/kd_font_middle"/>
-
-                    <androidx.appcompat.widget.SwitchCompat
-                        android:id="@+id/switchFourTierMemory"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/kd_space_200"
-                    android:text="分层记忆，自动提炼关键信息，对话更智能"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="@dimen/kd_font_small"/>
-
-                <TextView
-                    android:id="@+id/tvEmbedStatus"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/kd_space_300"
-                    android:text="Embedding 状态：检测中…"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="@dimen/kd_font_small"/>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/kd_line_regular"
-                    android:layout_marginTop="@dimen/kd_space_300"
-                    android:layout_marginBottom="@dimen/kd_space_300" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Embedding 后端"
-                        android:textColor="@color/text_primary"
-                        android:textSize="@dimen/kd_font_base"/>
-
-                    <TextView
-                        android:id="@+id/tvEmbedBackendValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="远程"
-                        android:textColor="@color/pink_primary"
-                        android:textSize="@dimen/kd_font_middle"
-                        android:textStyle="bold"
-                        android:paddingHorizontal="@dimen/kd_space_400"
-                        android:paddingVertical="@dimen/kd_space_200"
-                        android:background="@drawable/bg_card_radius" />
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/kd_space_200"
-                    android:text="固定走远程：复用 Chat 的 baseUrl/apiKey 调用 /embeddings，文本会出网。APK 体积更小（不打 bge 模型）。"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="@dimen/kd_font_small"/>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/kd_space_300"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="远程 embedding 模型"
-                        android:textColor="@color/text_primary"
-                        android:textSize="@dimen/kd_font_base"/>
-
-                    <TextView
-                        android:id="@+id/tvEmbedRemoteModel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="BAAI/bge-large-zh-v1.5"
-                        android:textColor="@color/pink_primary"
-                        android:textSize="@dimen/kd_font_small"
-                        android:textStyle="bold"
-                        android:paddingHorizontal="@dimen/kd_space_400"
-                        android:paddingVertical="@dimen/kd_space_200"
-                        android:background="@drawable/bg_card_radius" />
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/tvEmbedDim"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/kd_space_200"
-                    android:text="向量维度：1024"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="@dimen/kd_font_small"/>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_marginTop="@dimen/kd_space_300">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="画布外置阈值（mild）"
-                            android:textColor="@color/text_primary"
-                            android:textSize="@dimen/kd_font_base"/>
-
-                        <TextView
-                            android:id="@+id/tvOffloadMildValue"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0.50"
-                            android:textColor="@color/pink_primary"
-                            android:textSize="@dimen/kd_font_base"
-                            android:textStyle="bold"
-                            android:minWidth="@dimen/kd_space_800"
-                            android:gravity="end" />
-                    </LinearLayout>
-
-                    <SeekBar
-                        android:id="@+id/seekOffloadMild"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:max="60"
-                        android:progress="30" />
-                </LinearLayout>
-
                 <Button
                     android:id="@+id/btnOpenMemoryViewer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/kd_space_400"
                     android:background="@drawable/bg_input_radius"
-                    android:text="查看 / 导出记忆"
+                    android:text="查看记忆"
                     android:textColor="@color/text_primary"
                     android:textSize="@dimen/kd_font_base" />
 
@@ -656,7 +493,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/kd_space_200"
                     android:background="@drawable/bg_input_radius"
-                    android:text="立即刷新记忆（调试）"
+                    android:text="立即刷新记忆"
                     android:textColor="@color/text_primary"
                     android:textSize="@dimen/kd_font_base" />
             </LinearLayout>

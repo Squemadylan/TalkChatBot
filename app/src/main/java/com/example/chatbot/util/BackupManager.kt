@@ -70,7 +70,9 @@ object BackupManager {
         val apiKey: String,
         val model: String,
         val temperature: Double,
-        val maxTokens: Int
+        val maxTokens: Int,
+        val embedModel: String? = null,
+        val embedApiKey: String? = null
     )
 
     data class UserProfileBackup(
@@ -138,7 +140,9 @@ object BackupManager {
         apiKey = apiKey,
         model = model,
         temperature = temperature,
-        maxTokens = maxTokens
+        maxTokens = maxTokens,
+        embedModel = embedModel,
+        embedApiKey = embedApiKey
     )
 
     private fun ApiConfigBackup.toApiConfig(): ApiConfig = ApiConfig(
@@ -147,7 +151,9 @@ object BackupManager {
         apiKey = apiKey,
         model = model,
         temperature = temperature,
-        maxTokens = maxTokens
+        maxTokens = maxTokens,
+        embedModel = embedModel.orEmpty(),
+        embedApiKey = embedApiKey.orEmpty()
     )
 
     /** Android 9 及以下：主存储根目录 `ChatBot/Backups`（需 WRITE 权限） */

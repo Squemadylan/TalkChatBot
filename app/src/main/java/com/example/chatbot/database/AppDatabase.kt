@@ -10,7 +10,7 @@ import com.example.chatbot.data.model.Message
 
 @Database(
     entities = [Character::class, Message::class, ApiConfig::class],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -51,6 +51,17 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE characters ADD COLUMN enableAutoRead INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("ALTER TABLE characters ADD COLUMN voiceSpeed REAL NOT NULL DEFAULT 1.0")
                 db.execSQL("ALTER TABLE characters ADD COLUMN voiceLanguage TEXT NOT NULL DEFAULT 'zh-CN'")
+            }
+        }
+
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE api_config ADD COLUMN embedModel TEXT NOT NULL DEFAULT ''"
+                )
+                db.execSQL(
+                    "ALTER TABLE api_config ADD COLUMN embedApiKey TEXT NOT NULL DEFAULT ''"
+                )
             }
         }
     }

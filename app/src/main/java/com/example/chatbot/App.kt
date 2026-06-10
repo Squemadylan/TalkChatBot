@@ -4,6 +4,9 @@ import android.app.Application
 import android.content.Context
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.room.Room
 import com.example.chatbot.database.AppDatabase
 import com.example.chatbot.data.repository.ApiConfigRepository
@@ -42,10 +45,23 @@ class App : Application(), Thread.UncaughtExceptionHandler {
         systemDefaultExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler(this)
         initializeDatabase()
+        registerProcessLifecycleObserver()
         // 初始化中国手机品牌推送服务
         PushManager.init(this)
         // v2.0：4 层记忆管线预热（异步；旧数据迁移、embedder 加载）
         MemoryPipeline.initOnce(this)
+    }
+
+    private fun registerProcessLifecycleObserver() {
+        ProcessLifecycleOwner.get().lifecycle.addObserver(
+            LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_START -> isAppInForeground = true
+                    Lifecycle.Event.ON_STOP -> isAppInForeground = false
+                    else -> Unit
+                }
+            }
+        )
     }
 
     private fun applySavedNightMode() {
@@ -65,6 +81,7 @@ class App : Application(), Thread.UncaughtExceptionHandler {
                 .addMigrations(AppDatabase.MIGRATION_2_3)
                 .addMigrations(AppDatabase.MIGRATION_3_4)
                 .addMigrations(AppDatabase.MIGRATION_4_5)
+                .addMigrations(AppDatabase.MIGRATION_5_6)
                 .build()
             _database = db
             apiConfigRepository = ApiConfigRepository(db.apiConfigDao())
@@ -113,7 +130,7 @@ class App : Application(), Thread.UncaughtExceptionHandler {
         private const val DATABASE_NAME = "chatbot_db"
         const val PREFS_NAME = "chatbot_prefs"
         
-        // APP可见性标志：是否在前台
+        /** 应用是否处于前台可见（由 [ProcessLifecycleOwner] 维护，勿在 Activity 中手动切换） */
         @Volatile
         var isAppInForeground = false
         const val KEY_NIGHT_MODE = "night_mode"

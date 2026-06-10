@@ -25,6 +25,7 @@ import com.example.chatbot.data.network.MessageRequest
 import com.example.chatbot.data.network.OpenAiChatResponseReader
 import com.example.chatbot.data.network.RetrofitClient
 import com.example.chatbot.ui.chat.MemoryHubRow
+import com.example.chatbot.ui.common.Event
 import com.example.chatbot.util.LongTermMemoryManager
 import com.example.chatbot.memory.MemoryConfig
 import com.example.chatbot.memory.MemoryPipeline
@@ -37,10 +38,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import okhttp3.Call
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import retrofit2.HttpException
 import java.util.concurrent.TimeoutException
 import kotlin.jvm.Volatile
@@ -64,8 +71,27 @@ class ChatViewModel(
     @Volatile
     private var activeStreamingAssistantMessageId: Long = -1L
 
+    @Volatile
+    private var activeStreamCall: Call? = null
+
     /** 当前正在流式接收的助手消息行 id；无则 ≤0 */
     fun streamingAssistantMessageIdForUi(): Long = activeStreamingAssistantMessageId
+
+    data class ExportChatPayload(
+        val subject: String,
+        val content: String,
+        val chooserTitle: String
+    )
+
+    private val _exportChatEvent = MutableLiveData<Event<ExportChatPayload>?>()
+    val exportChatEvent: LiveData<Event<ExportChatPayload>?> = _exportChatEvent
+
+    override fun onCleared() {
+        activeStreamCall?.cancel()
+        activeStreamCall = null
+        activeStreamingAssistantMessageId = -1L
+        super.onCleared()
+    }
 
     val memoryHubRows: LiveData<List<MemoryHubRow>> = combine(
         characterRepository.allCharacters,
@@ -156,8 +182,16 @@ class ChatViewModel(
                 _errorMessage.postValue("应用状态异常，请稍后重试")
                 return@launch
             }
-            LongTermMemoryManager.deleteMemory(appCtx, characterId)
-            _errorMessage.postValue("长久记忆已删除")
+            val result = runCatching {
+                LongTermMemoryManager.deleteMemory(appCtx, characterId)
+            }
+            _errorMessage.postValue(
+                if (result.isSuccess) "长久记忆已删除"
+                else "删除长久记忆失败：${result.exceptionOrNull()?.message ?: "未知错误"}"
+            )
+            if (result.isFailure) {
+                Log.e(TAG, "deleteLongTermMemoryForCharacter failed", result.exceptionOrNull())
+            }
         }
     }
 
@@ -186,7 +220,7 @@ class ChatViewModel(
     private val _assistantMessageToSpeak = MutableLiveData<String?>()
     val assistantMessageToSpeak: LiveData<String?> = _assistantMessageToSpeak
 
-    fun exportChat(characterId: Long, characterName: String, format: String, context: Context?) {
+    fun exportChat(characterId: Long, characterName: String, format: String) {
         viewModelScope.launch(Dispatchers.IO) {
             _isLoading.postValue(true)
             try {
@@ -199,12 +233,22 @@ class ChatViewModel(
                 if (format == "md") {
                     sb.appendLine("# 与「${characterName}」的对话")
                     sb.appendLine()
-                    sb.appendLine("> 导出时间：${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date())}")
+                    sb.appendLine(
+                        "> 导出时间：${
+                            java.text.SimpleDateFormat(
+                                "yyyy-MM-dd HH:mm",
+                                java.util.Locale.getDefault()
+                            ).format(java.util.Date())
+                        }"
+                    )
                     sb.appendLine()
                 }
                 for (msg in messages) {
                     val speaker = if (msg.isUser) "用户" else characterName
-                    val time = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date(msg.timestamp))
+                    val time = java.text.SimpleDateFormat(
+                        "yyyy-MM-dd HH:mm",
+                        java.util.Locale.getDefault()
+                    ).format(java.util.Date(msg.timestamp))
                     if (format == "md") {
                         sb.appendLine("**$speaker** [$time]")
                         sb.appendLine(msg.content)
@@ -213,20 +257,17 @@ class ChatViewModel(
                         sb.appendLine("$speaker [$time]: ${msg.content}")
                     }
                 }
-                val fileName = "${characterName}_${System.currentTimeMillis()}.$format"
-                val content = sb.toString()
-                if (context != null) {
-                    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(android.content.Intent.EXTRA_SUBJECT, "聊天记录：$characterName")
-                        putExtra(android.content.Intent.EXTRA_TEXT, content)
-                    }
-                    withContext(Dispatchers.Main) {
-                        context.startActivity(android.content.Intent.createChooser(intent, "导出聊天记录"))
-                    }
-                }
-                _errorMessage.postValue("已准备导出")
+                _exportChatEvent.postValue(
+                    Event(
+                        ExportChatPayload(
+                            subject = "聊天记录：$characterName",
+                            content = sb.toString(),
+                            chooserTitle = "导出聊天记录"
+                        )
+                    )
+                )
             } catch (e: Exception) {
+                Log.e(TAG, "exportChat failed", e)
                 _errorMessage.postValue("导出失败：${e.message}")
             } finally {
                 _isLoading.postValue(false)
@@ -265,11 +306,6 @@ class ChatViewModel(
             try {
                 if (!isNetworkAvailable(appCtx)) {
                     _errorMessage.postValue("网络不可用，请检查网络连接")
-                    return@launch
-                }
-
-                if (appCtx == null) {
-                    _errorMessage.postValue("应用状态异常，请稍后重试")
                     return@launch
                 }
 
@@ -366,6 +402,7 @@ class ChatViewModel(
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private suspend fun sendApiRequestAndUpdateMessage(characterId: Long, characterPrompt: String, userContent: String, context: Context?) {
         val config = apiConfigRepository.getApiConfig()
         if (config == null || config.baseUrl.isEmpty() || config.apiKey.isEmpty()) {
@@ -472,9 +509,13 @@ class ChatViewModel(
 
             val base = RetrofitClient.normalizeApiBaseUrl(config.baseUrl)
             val gson = Gson()
-            Log.d(TAG, "Request JSON: ${gson.toJson(request)}")
-            Log.d(TAG, "base=$base")
-            val streamClient = RetrofitClient.createOkHttpClient(config.apiKey, logBodies = true)
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "chat/completions stream base=$base model=${config.model}")
+            }
+            val streamClient = RetrofitClient.createOkHttpClient(
+                config.apiKey,
+                logBodies = BuildConfig.DEBUG
+            )
             val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
             val httpRequest = Request.Builder()
@@ -483,7 +524,19 @@ class ChatViewModel(
                 .header("Accept", "text/event-stream, application/json")
                 .build()
 
-            val httpResponse = streamClient.newCall(httpRequest).execute()
+            val call = streamClient.newCall(httpRequest)
+            activeStreamCall = call
+            val httpResponse = suspendCancellableCoroutine<Response> { cont ->
+                cont.invokeOnCancellation { call.cancel() }
+                try {
+                    cont.resume(call.execute()) {}
+                } catch (e: Exception) {
+                    cont.resumeWithException(e)
+                }
+            }
+            if (activeStreamCall === call) {
+                activeStreamCall = null
+            }
             try {
                 val streamResult = OpenAiChatResponseReader.consume(httpResponse, gson) { piece ->
                     if (piece.isNotEmpty()) {
@@ -707,7 +760,9 @@ class ChatViewModel(
                     capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
             lastNetworkState
         } catch (e: Exception) {
-            true
+            Log.w(TAG, "isNetworkAvailable check failed", e)
+            lastNetworkState = false
+            false
         }
     }
 

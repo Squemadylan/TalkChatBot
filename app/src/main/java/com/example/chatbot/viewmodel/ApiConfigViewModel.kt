@@ -39,7 +39,9 @@ class ApiConfigViewModel(private val repository: ApiConfigRepository) : ViewMode
         apiKey: String,
         model: String,
         temperature: Double,
-        maxTokensRaw: String?
+        maxTokensRaw: String?,
+        embedModel: String = "",
+        embedApiKey: String = ""
     ): PersistResult = withContext(Dispatchers.IO) {
         val trimmedModel = model.trim()
         if (baseUrl.isBlank() || apiKey.isBlank() || trimmedModel.isEmpty()) {
@@ -64,13 +66,23 @@ class ApiConfigViewModel(private val repository: ApiConfigRepository) : ViewMode
             else -> ModelDefaultTokens.recommendedMaxOutputTokens(trimmedModel)
         }
 
+        val trimmedChatKey = apiKey.trim()
+        val trimmedEmbedKeyField = embedApiKey.trim()
+        val storedEmbedKey = when {
+            trimmedEmbedKeyField.isEmpty() -> ""
+            trimmedEmbedKeyField == trimmedChatKey -> ""
+            else -> trimmedEmbedKeyField
+        }
+
         val config = ApiConfig(
             id = 1,
             baseUrl = baseUrl.trim(),
-            apiKey = apiKey.trim(),
+            apiKey = trimmedChatKey,
             model = trimmedModel,
             temperature = temperature,
-            maxTokens = maxTokens
+            maxTokens = maxTokens,
+            embedModel = embedModel.trim(),
+            embedApiKey = storedEmbedKey
         )
         repository.saveApiConfig(config)
         val readBack = repository.getApiConfig()

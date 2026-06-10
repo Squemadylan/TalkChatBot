@@ -51,6 +51,8 @@ class ChatFragment : Fragment() {
     private var characterDisplayName: String = ""
     private var characterOpeningGreeting: String = ""
     private var hasSentGreeting: Boolean = false
+    @Volatile
+    private var greetingInFlight: Boolean = false
     private var userDisplayName: String = "用户"
     private var userPersona: String = ""
 
@@ -94,9 +96,8 @@ class ChatFragment : Fragment() {
         setupRecyclerForCurrentMode()
         setupSendButton()
         setupManageButton()
-        setupHubSearchFilter()
+        setupSearchField()
         setupBackNavigation()
-        setupChatSearch()
         setupVoiceInput()
         observeData()
     }
@@ -114,7 +115,7 @@ class ChatFragment : Fragment() {
         binding?.btnBack?.setOnClickListener { navigateBackFromChat() }
     }
 
-    private fun setupChatSearch() {
+    private fun setupSearchField() {
         binding?.btnSearchChat?.setOnClickListener {
             isSearchMode = !isSearchMode
             binding?.etSearch?.visibility = if (isSearchMode) View.VISIBLE else View.GONE
@@ -130,8 +131,14 @@ class ChatFragment : Fragment() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
-                chatSearchQuery = s?.toString()?.trim().orEmpty()
-                submitChatSearchResults()
+                val text = s?.toString()?.trim().orEmpty()
+                if (characterId == 0L) {
+                    searchQuery = text.lowercase(Locale.getDefault())
+                    submitHubList()
+                } else if (isSearchMode) {
+                    chatSearchQuery = text
+                    submitChatSearchResults()
+                }
             }
         })
     }
@@ -254,9 +261,10 @@ class ChatFragment : Fragment() {
             binding?.recyclerView?.layoutManager = LinearLayoutManager(requireContext())
             binding?.recyclerView?.adapter = memoryAdapter
         } else {
+            val renderer = markwon ?: return
             if (messageAdapter == null) {
                 messageAdapter = MessageAdapter(
-                    markwon!!,
+                    renderer,
                     { viewModel?.streamingAssistantMessageIdForUi() ?: -1L },
                     { message, anchor -> showMessageLongClickMenu(message, anchor) }
                 )
@@ -377,19 +385,29 @@ class ChatFragment : Fragment() {
 
     private fun checkAndSendGreeting() {
         if (characterOpeningGreeting.isBlank() || characterId == 0L) return
-        if (viewModel == null) return
+        if (viewModel == null || hasSentGreeting || greetingInFlight) return
 
         val app = activity?.application as? App ?: return
+        if (!app.isDatabaseInitialized()) return
+        greetingInFlight = true
         viewLifecycleOwner.lifecycleScope.launch {
-            val hasMessages = withContext(Dispatchers.IO) {
-                try {
-                    app.database.messageDao().getMessageCount(characterId) > 0
-                } catch (_: Exception) {
-                    false
+            try {
+                val hasMessages = withContext(Dispatchers.IO) {
+                    runCatching {
+                        app.database.messageDao().getMessageCount(characterId) > 0
+                    }.getOrDefault(false)
                 }
-            }
-            if (!hasMessages) {
-                viewModel?.sendGreetingMessage(characterId, characterOpeningGreeting, characterPrompt, requireContext())
+                if (!hasMessages && !hasSentGreeting) {
+                    hasSentGreeting = true
+                    viewModel?.sendGreetingMessage(
+                        characterId,
+                        characterOpeningGreeting,
+                        characterPrompt,
+                        requireContext()
+                    )
+                }
+            } finally {
+                greetingInFlight = false
             }
         }
     }
@@ -467,17 +485,6 @@ class ChatFragment : Fragment() {
         viewModel?.sendMessage(characterId, message, characterPrompt, requireContext())
     }
 
-    private fun setupHubSearchFilter() {
-        binding?.etSearch?.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                searchQuery = s?.toString()?.trim()?.lowercase(Locale.getDefault()).orEmpty()
-                submitHubList()
-            }
-        })
-    }
-
     private fun setupManageButton() {
         binding?.btnDelete?.setOnClickListener {
             if (characterId != 0L) {
@@ -548,7 +555,7 @@ class ChatFragment : Fragment() {
             .setTitle("导出聊天记录")
             .setItems(options) { _, which ->
                 val format = if (which == 0) "md" else "txt"
-                viewModel?.exportChat(characterId, characterDisplayName, format, requireContext())
+                viewModel?.exportChat(characterId, characterDisplayName, format)
             }
             .show()
     }
@@ -677,6 +684,19 @@ class ChatFragment : Fragment() {
                     binding?.recyclerView?.scrollToPosition(results.size - 1)
                 }
             }
+        }
+
+        vm.exportChatEvent.observe(viewLifecycleOwner) { event ->
+            if (!isAdded || _binding == null) return@observe
+            val payload = event?.getContentIfNotHandled() ?: return@observe
+            val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(android.content.Intent.EXTRA_SUBJECT, payload.subject)
+                putExtra(android.content.Intent.EXTRA_TEXT, payload.content)
+            }
+            startActivity(
+                android.content.Intent.createChooser(shareIntent, payload.chooserTitle)
+            )
         }
     }
 

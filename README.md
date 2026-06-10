@@ -1,6 +1,6 @@
 # 独白匣
 
-面向 Android 的大模型角色聊天应用：自建角色、流式对话、本地回忆与备份。支持 OpenAI 兼容的 Chat Completions API（含 SSE 流式）。
+面向 Android 的大模型角色聊天应用：自建角色、流式对话、四层渐进式本地记忆、语音播报与备份。支持 OpenAI 兼容的 Chat Completions API（含 SSE 流式）。
 
 > 仓库名仍为 [TalkChatBot](https://github.com/Squemadylan/TalkChatBot)；应用显示名与图标已更新为 **独白匣**。
 
@@ -36,6 +36,7 @@
   031-test-fix-loop.mdc        # 测试修复循环规则
   041-ci-cd-rules.mdc          # CI/PR/发布规则
   050-auto-iteration.mdc        # 自动化迭代规则
+  060-android-dev-standard.mdc  # Android 开发规范（Blankj 完结版）
   （基础规则 000 / 400 / android-packaging 已在安装时配置）
 ```
 
@@ -55,6 +56,8 @@ xnotes/
 .ai/
   prd/                         # PRD 需求文档目录
   story-*.story.md             # 故事卡（每个功能一个文件）
+.cursor/skills/
+  android-dev-standard/        # Android 开发规范技能（Blankj 完结版）
 ```
 
 ### 自动化脚本
@@ -68,7 +71,7 @@ scripts/dev/                   # Python 工具脚本
 _local/                        # 本机日志、APK 副本（不入 Git）
 ```
 
-目录说明见 [docs/PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md)。
+目录与脚本说明见 `scripts/automation/` 及各 `Auto-*.ps1` 文件头注释。
 
 ### CI 状态
 
@@ -85,12 +88,12 @@ CI 配置：`.github/workflows/ci.yml`（push 到 main/dev 自动触发）
 | 月份 | 主题 | 目标 Epic |
 |------|------|-----------|
 | 2026-05 | 基础体验完善 | Epic-1（角色管理增强） |
-| 2026-06 | 对话能力扩展 | Epic-2（多媒体与搜索） |
+| 2026-06 | 对话能力扩展 | Epic-2（搜索/语音已完成，图片待开发） |
 | 2026-Q3 | 进阶特性 | Epic-3（个性化与生态） |
 
 ---
 
-- **当前版本**：1.4（versionCode 8）
+- **当前版本**：1.5.0（versionCode 8）
 - **最低系统**：Android 8.0（API 26）
 - **目标 SDK**：34
 - **仓库**：[github.com/Squemadylan/TalkChatBot](https://github.com/Squemadylan/TalkChatBot)
@@ -101,6 +104,35 @@ CI 配置：`.github/workflows/ci.yml`（push 到 main/dev 自动触发）
 ---
 
 ## 近期更新
+
+### v2.0.1 / 推送（2026-06）
+
+- **四层记忆修复**：修复 L2 场景记忆不生效问题，优化 L2/L3 管线稳定性
+- **推送通知**：AI 回复完成后，仅在应用处于后台时发送系统通知；前台对话不打扰
+- **通知权限**：Android 13+ 启动时请求通知权限，拒绝后引导用户手动开启
+- **体验微调**：移除记忆生成时的 Toast；增加调试日志便于排查 API 参数问题
+- **厂商推送骨架**：预留小米/华为/OPPO/VIVO/荣耀 SDK 接入位（当前使用系统通知）
+
+### v2.0（2026-06）
+
+- **四层渐进式记忆**：参考 TencentDB Agent Memory，替换旧版单文件 Markdown 记忆
+  - **L3 Persona**：跨角色 `persona_global.md` + 角色专属 `persona.md`
+  - **L2 Scenario**：按主题聚类为 `scenarios/*.md`
+  - **L1 Atom**：原子事实 JSONL + 向量索引（远程 embedding / BM25 兜底）
+  - **L0 + 短时画布**：原始对话滚动缓存 + Mermaid 画布，超长历史外置到 `refs/`
+- **记忆召回**：发消息前按 Persona → Scenario → Atom → Canvas 顺序注入 system prompt
+- **记忆 UI**：设置页记忆开关与阈值、记忆查看/导出页、角色编辑页重置记忆
+- **旧数据迁移**：启动时自动将 `long_term_memory/memory_<id>.md` 迁移到新目录树
+- **备份升级**：ZIP 格式升至 v4，完整打包 `memory/` 目录树
+
+### v1.5（2026-05）
+
+- **豆包 TTS**：集成 VolcTtsHelper（HTTP），VoiceHelper 多引擎回退（系统 TTS → 豆包）
+- **语音输入**：对话页麦克风按钮，调用系统语音识别
+- **自动朗读**：助手回复完成后可自动播报（可在设置中调节语速）
+- **聊天搜索**：对话内全文搜索，高亮匹配消息
+- **消息收藏**：长按消息可收藏 / 取消收藏
+- **对话导出**：支持导出当前角色聊天记录（多种文本格式）
 
 ### v1.4（2026-05）
 
@@ -123,7 +155,7 @@ CI 配置：`.github/workflows/ci.yml`（push 到 main/dev 自动触发）
 ### 2026-05-18
 
 - **品牌**：应用更名为 **独白匣**，更换全新启动图标
-- **长期记忆**：角色可单独开启；由模型将对话摘要为 Markdown 写入本地，发消息时自动注入上下文；备份 ZIP 含记忆文件
+- **长期记忆**（初版）：角色可单独开启；由模型将对话摘要为 Markdown 写入本地（v2.0 起升级为四层记忆架构）
 - **对话交互**：长按消息支持复制（含占位符替换）与单条删除
 - **开源许可**：新增 [MIT LICENSE](LICENSE)（含中文译文）
 
@@ -165,7 +197,7 @@ CI 配置：`.github/workflows/ci.yml`（push 到 main/dev 自动触发）
 | **角色** | 角色卡片列表、搜索与按标签筛选、新建/编辑角色 |
 | **回忆** | 按角色汇总最近一条消息；进入某角色后为对话页 |
 | **配置** | 大模型 API 地址、密钥、模型、温度、最大 Token |
-| **设置** | 个人资料、聊天显示、记忆条数、备份恢复、检查更新 / 网盘手动更新、深色模式等 |
+| **设置** | 个人资料、聊天显示、四层记忆、语音、备份恢复、检查更新 / 网盘手动更新、深色模式等 |
 
 进入**某一角色的对话页**时底部导航会隐藏；在 **「回忆」列表**（未进入具体对话）时底部导航保持显示。
 
@@ -184,7 +216,12 @@ CI 配置：`.github/workflows/ci.yml`（push 到 main/dev 自动触发）
 ### 回忆与对话
 
 - **回忆页**：各角色最近一条消息预览，支持搜索；长按菜单可清空该角色回忆或删除角色
-- **对话页**：与当前角色流式聊天；用户气泡 / 助手气泡，助手回复支持 Markdown（流式结束后渲染）；**长按消息**可复制或删除单条
+- **对话页**：与当前角色流式聊天；用户气泡 / 助手气泡，助手回复支持 Markdown（流式结束后渲染）
+- **长按消息**：复制（含占位符替换）、删除单条、收藏 / 取消收藏
+- **对话内搜索**：按关键词检索当前角色聊天记录
+- **对话导出**：导出当前角色聊天记录为文本文件
+- **语音输入**：麦克风按钮调用系统语音识别
+- **自动朗读**：助手回复完成后可 TTS 播报（豆包 TTS + 系统 TTS 回退）
 - **主开场白**：无历史消息时自动插入角色配置的开场白，**不会**再自动请求模型生成第二条
 - **占位符**：发送与展示时替换 `{{user}}`、`{{persona}}`、`{{char}}` 及常见别名，以及 `{{date}}`、`{{time}}` 等时间占位（见 `UserPromptPlaceholders`）
 - 清空当前角色对话 / 清空全部回忆
@@ -196,29 +233,45 @@ CI 配置：`.github/workflows/ci.yml`（push 到 main/dev 自动触发）
 - API Key、模型名、温度、最大 Token；**修改后自动保存**
 - API Key 支持显示 / 隐藏；可跳转硅基流动注册页获取 Key
 - 根据模型名推荐默认 `max_tokens`（可再手动改）
+- **一键检测连接**：显示成功 / Key 错误 / 余额不足等状态
 - **流式请求**（SSE）；失败时常见 HTTP 状态有中文提示
 - 网络不可用、超时、域名解析失败等错误提示
 
-### 长期记忆
+### 四层记忆（v2.0）
 
-- 按角色可选开启；后台调用同一套 API 将历史对话摘要为结构化 Markdown
-- 聊天请求时以 system 消息注入 **【长期记忆】**；清空或删除角色时同步清除本地记忆文件
-- 全量备份 ZIP 时包含 `memories/` 目录，恢复后可继续使用
+- 按角色可选开启；对话完成后后台异步跑 L1 抽取 → L2 聚类 → L3 Persona 更新
+- 发消息前由 `MemoryPipeline` 召回并注入 Persona、场景、原子事实、短时画布
+- 向量召回复用 Chat API 配置的远程 embedding；未配置时降级为 BM25
+- 设置页可查看 embedding 状态、调节外置阈值、手动触发 L1/L2/L3 刷新
+- **记忆查看页**：只读浏览各层文件，支持导出记忆 ZIP
+- 角色编辑页可查看记忆层级状态、重置该角色记忆
+- 旧版 `memory_<id>.md` 启动时自动迁移；清空或删除角色时同步清除记忆目录
+- 全量备份 ZIP（v4）完整打包 `memory/` 目录树；恢复 v3 备份时自动触发迁移
 
 ### 设置与个人资料
 
 - 用户头像、显示名、人设（参与占位符替换）
 - 深色 / 浅色模式
+- 聊天气泡样式（默认 / 紧凑 / 圆角 / 半透明）
+- 回复策略（标准 / 短回复 / 细腻），自动调整 API 参数
+- 状态栏沉浸模式开关
 - 聊天是否显示双方头像
 - 带入上下文的历史消息条数（0–10 条）
 - 聊天背景图（选择 / 清除）
-- **备份与恢复**（ZIP 格式版本 3）：全部角色、头像文件、已开启角色的长期记忆、用户名/人设/用户头像，以及 **API 配置**（Base URL、API Key、模型、温度、最大 Token）；Android 10+ 保存到 `Download/ChatBot/`，较低版本写入存储根目录 `ChatBot/Backups`
+- 语音语速、语言偏好
+- **备份与恢复**（ZIP 格式版本 4）：全部角色、头像、四层记忆目录树、用户名/人设/用户头像，以及 **API 配置**；Android 10+ 保存到 `Download/ChatBot/`，较低版本写入存储根目录 `ChatBot/Backups`
 - **检查更新**：拉取 `app/update.json`，支持可选更新与强制最低版本；下载安装需「安装未知应用」权限
 - **网盘手动更新**：跳转夸克网盘分享页下载 APK（链接可在 `update.json` 的 `manualUpdateUrl` 配置，亦内置默认地址）
 
+### 推送通知
+
+- AI 回复完成后，**仅当应用处于后台**时发送系统通知（前台直接看对话，不打扰）
+- Android 13+ 通知权限请求与引导开启流程
+- 通知渠道：AI 回复、记忆保存、其他（厂商推送 SDK 接入位已预留）
+
 ### 其它
 
-- 本地 Room 数据库持久化角色与消息
+- 本地 Room 数据库持久化角色与消息（含收藏字段）
 - 启动时自动检查更新（强制更新立即提示；可选更新 24 小时内最多提示一次）
 - Release 构建开启 R8 压缩与资源收缩；Debug 下可选 HTTP 日志
 - 未捕获异常写入应用私有目录 `last_crash.txt`
@@ -296,8 +349,8 @@ Debug APK 路径：`app/build/outputs/apk/debug/app-debug.apk`
 
 ### 示例（当前线上配置）
 
-- **`versionCode` 必须与已发布的最新 APK 一致**。当前仓库配置为 **1.2.1（versionCode 7）**：`versionCode: 7`、`minVersionCode: 5`（v5～v6 可选更新到 v7，v4 及以下强制更新）。
-- 已安装 v7 的用户手动检查会提示「当前已是最新版本」。
+- **`versionCode` 必须与已发布的最新 APK 一致**。当前仓库配置为 **1.5.0（versionCode 8）**：`versionCode: 8`、`minVersionCode: 8`（低于 v8 的用户强制更新）。
+- 已安装 v8 的用户手动检查会提示「当前已是最新版本」。
 
 > **注意**：jsDelivr 的 `@main` 有缓存延迟。客户端会同时请求 Raw / 镜像 / `main` 多个地址，并采用 **`versionCode` 最大** 的一份，避免旧安装包内嵌的历史 commit 镜像盖住新配置。发版后仍可将 `UPDATE_MANIFEST_URL_MIRROR` 改为当次 commit SHA 以加快生效。
 
@@ -313,7 +366,9 @@ Debug APK 路径：`app/build/outputs/apk/debug/app-debug.apk`
 | UI | Material Components、View Binding、ConstraintLayout |
 | 架构 | MVVM + Repository |
 | 本地库 | Room |
+| 记忆 | MemoryPipeline（L0–L3 + 短时画布）、sqlite-vec 向量索引 |
 | 网络 | Retrofit、OkHttp（流式 SSE） |
+| 语音 | VolcTtsHelper（豆包 HTTP TTS）、系统 SpeechRecognizer |
 | 导航 | Jetpack Navigation |
 | 异步 | Kotlin Coroutines |
 | Markdown | Markwon |
@@ -322,7 +377,7 @@ Debug APK 路径：`app/build/outputs/apk/debug/app-debug.apk`
 
 ## 待办（规划）
 
-以下功能**尚未实现**或仅为设置页占位入口，后续按月度迭代推进。
+以下功能**尚未实现**，后续按月度迭代推进。
 
 ### 2026-05 月（Epic-1：角色管理增强）
 
@@ -336,27 +391,38 @@ Debug APK 路径：`app/build/outputs/apk/debug/app-debug.apk`
 | Story | 功能 | 状态 |
 |-------|------|------|
 | story-3 | 对话内发送图片 | 待开发 |
-| story-4 | 聊天记录全文搜索 | 待开发 |
-| story-5 | 语音输入 / 语音播报 | 待开发 |
+| story-4 | 聊天记录全文搜索 | 已完成 |
+| story-5 | 语音输入 / 语音播报 | 已完成 |
 
 ### 2026-Q3（Epic-3：个性化与生态）
 
 | Story | 功能 | 状态 |
 |-------|------|------|
 | story-6 | 多套 API 配置切换 | 待开发 |
-| story-7 | API 连接一键检测 | 待开发 |
+| story-7 | API 连接一键检测 | 已完成 |
 | story-8 | 背景音乐播放 | 待开发 |
 | story-9 | 官网与社群链接 | 待开发 |
+
+### v2.1+（个性化升级，PRD 已写）
+
+- [ ] 气泡颜色自定义、字体大小/行间距
+- [ ] 打字机效果、外语回复即时翻译
+- [ ] Mermaid 画布可视化渲染
+- [ ] 厂商推送 SDK 正式接入（小米/华为/OPPO/VIVO/荣耀）
 
 ### 已完成
 
 - [x] 应用内检查更新（`app/update.json`，含强制/可选与网盘手动更新）
-- [x] 角色长期记忆（2026-05-18）
+- [x] 角色长期记忆 → v2.0 四层渐进式记忆（2026-06）
+- [x] 豆包 TTS、语音输入、自动朗读（v1.5）
+- [x] 聊天搜索、消息收藏、对话导出（v1.5）
+- [x] API 连接检测、气泡样式、回复策略、状态栏沉浸（v1.4）
+- [x] 后台 AI 回复推送通知（2026-06）
 
 ### 占位待优化
 
 - [ ] 消息转发
-- [ ] 设置项：气泡样式、回复策略、配图、状态栏等（当前为占位）
+- [ ] 设置项「配图」等尚未落地的入口
 
 ---
 

@@ -1,7 +1,10 @@
 package com.example.chatbot.memory.embed
 
+import android.content.Context
 import android.util.Log
 import com.example.chatbot.data.model.ApiConfig
+import com.example.chatbot.data.model.effectiveEmbedApiKey
+import com.example.chatbot.util.EmbeddingFailureNotifier
 import com.example.chatbot.data.network.RetrofitClient
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
@@ -28,7 +31,8 @@ import okhttp3.RequestBody.Companion.toRequestBody
 class RemoteEmbedder(
     private val apiConfig: ApiConfig,
     private val model: String,
-    private val dim: Int
+    private val dim: Int,
+    private val appContext: Context
 ) : LocalEmbedder {
 
     @Volatile private var closed: Boolean = false
@@ -77,11 +81,16 @@ class RemoteEmbedder(
             .url("${base}embeddings")
             .post(gson.toJson(payload).toRequestBody(jsonType))
             .build()
-        val client = RetrofitClient.createOkHttpClient(apiConfig.apiKey, logBodies = false)
+        val embedKey = apiConfig.effectiveEmbedApiKey()
+        if (embedKey.isBlank()) {
+            throw Unavailable("embed api key empty")
+        }
+        val client = RetrofitClient.createOkHttpClient(embedKey, logBodies = false)
         client.newCall(http).execute().use { resp ->
             if (!resp.isSuccessful) {
                 val body = resp.body?.string().orEmpty().take(200)
                 Log.w(TAG, "embeddings HTTP ${resp.code}: $body")
+                EmbeddingFailureNotifier.notifyOnce(appContext)
                 throw Unavailable("embeddings HTTP ${resp.code}")
             }
             val body = resp.body?.string() ?: throw Unavailable("empty body")
