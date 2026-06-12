@@ -37,6 +37,7 @@
   041-ci-cd-rules.mdc          # CI/PR/发布规则
   050-auto-iteration.mdc        # 自动化迭代规则
   060-android-dev-standard.mdc  # Android 开发规范（Blankj 完结版）
+  061-android-doubao-tts.mdc    # 豆包 TTS 适配（VolcTtsHelper / VoiceHelper）
   （基础规则 000 / 400 / android-packaging 已在安装时配置）
 ```
 
@@ -58,6 +59,7 @@ xnotes/
   story-*.story.md             # 故事卡（每个功能一个文件）
 .cursor/skills/
   android-dev-standard/        # Android 开发规范技能（Blankj 完结版）
+  android-doubao-tts/          # 豆包 TTS 技能（仓库副本；全局主副本 ~/.cursor/skills/android-doubao-tts/）
 ```
 
 ### 自动化脚本

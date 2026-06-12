@@ -3,7 +3,8 @@
 > 记录时间：2026-05-28  
 > 项目：Dubaixia / TalkChatBot  
 > 实现文件：`app/src/main/java/com/example/chatbot/util/VolcTtsHelper.kt`  
-> 官方文档：<https://www.volcengine.com/docs/6561/79820>（小模型 HTTP 非流式）
+> 官方文档：<https://www.volcengine.com/docs/6561/79820>（小模型 HTTP 非流式）  
+> **Cursor 技能**：`.cursor/skills/android-doubao-tts/SKILL.md`（Agent 可调用的精简版 + `reference.md` 全文）
 
 ---
 
@@ -264,12 +265,15 @@ stop() / shutdown()：
 
 ## 6. 音色与配额
 
-| 音色示例 | 说明 |
-|----------|------|
-| `BV700_streaming` | 中文青年女声，文档常用 |
-| `BV001_streaming` / `BV002_streaming` | 标注免费，其余音色可能需在控制台「0 元下单」授权 |
+**本项目已授权音色（2026-06-08，22 个）**：详见 `.cursor/skills/android-doubao-tts/voices.md`。
 
-- 控制台查看调用次数、剩余额度
+| 要点 | 说明 |
+|------|------|
+| API 填 | `voice_type` = `BVxxx_streaming`（如 `BV700_streaming`），勿填实例 ID |
+| 默认 | 灿灿 `BV700_streaming` |
+| 免费 | `BV001_streaming`、`BV002_streaming` |
+
+- 控制台：https://console.volcengine.com/speech/app
 - 扣费成功但无声音 → **优先查响应 JSON 是否含 `data`**，而非怀疑网络
 
 ---

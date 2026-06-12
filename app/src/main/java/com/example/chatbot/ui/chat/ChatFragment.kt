@@ -6,6 +6,7 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.widget.Toast
 import androidx.appcompat.widget.PopupMenu
 import androidx.fragment.app.Fragment
@@ -62,6 +63,9 @@ class ChatFragment : Fragment() {
     private var chatSearchQuery: String = ""
     private var isVoiceInputActive: Boolean = false
 
+    private var onGlobalLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
+    private var keyboardScrollRunnable: Runnable? = null
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -100,6 +104,7 @@ class ChatFragment : Fragment() {
         setupBackNavigation()
         setupVoiceInput()
         observeData()
+        setupKeyboardListener()
     }
 
     /** 与系统返回键一致：弹出当前聊天页（由 NavHostFragment 处理物理返回，此处仅左上角按钮） */
@@ -170,6 +175,47 @@ class ChatFragment : Fragment() {
                 showToast("语音识别不可用")
             }
         }
+    }
+
+    private fun setupKeyboardListener() {
+        val rootView = binding?.root ?: return
+        val vto = rootView.viewTreeObserver
+        onGlobalLayoutListener = ViewTreeObserver.OnGlobalLayoutListener {
+            scrollToBottomIfNeeded()
+        }
+        vto.addOnGlobalLayoutListener(onGlobalLayoutListener)
+
+        binding?.etMessage?.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                postScrollToBottom()
+            }
+        }
+    }
+
+    private fun scrollToBottomIfNeeded() {
+        val recycler = binding?.recyclerView ?: return
+        val layoutManager = recycler.layoutManager as? LinearLayoutManager ?: return
+        val itemCount = layoutManager.itemCount
+        if (itemCount <= 0) return
+        val lastVisible = layoutManager.findLastCompletelyVisibleItemPosition()
+        if (lastVisible < itemCount - 1) {
+            postScrollToBottom()
+        }
+    }
+
+    private fun postScrollToBottom() {
+        val recycler = binding?.recyclerView ?: return
+        if (keyboardScrollRunnable != null) {
+            recycler.removeCallbacks(keyboardScrollRunnable)
+        }
+        keyboardScrollRunnable = Runnable {
+            val layoutManager = recycler.layoutManager as? LinearLayoutManager ?: return@Runnable
+            val itemCount = layoutManager.itemCount
+            if (itemCount > 0) {
+                layoutManager.scrollToPositionWithOffset(itemCount - 1, 0)
+            }
+        }
+        recycler.postDelayed(keyboardScrollRunnable, 150)
     }
 
     @Deprecated("Deprecated in Java")
@@ -707,6 +753,21 @@ class ChatFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        try {
+            binding?.root?.viewTreeObserver?.let { vto ->
+                onGlobalLayoutListener?.let { listener ->
+                    vto.removeOnGlobalLayoutListener(listener)
+                }
+            }
+        } catch (_: Exception) {}
+        try {
+            keyboardScrollRunnable?.let {
+                binding?.recyclerView?.removeCallbacks(it)
+            }
+        } catch (_: Exception) {}
+        onGlobalLayoutListener = null
+        keyboardScrollRunnable = null
+
         super.onDestroyView()
         _binding = null
         messageAdapter = null
